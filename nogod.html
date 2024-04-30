@@ -1,276 +1,151 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>No God</title>
-<style type="text/css">
-* {
-  margin:  0 !important;
-  background: whitesmoke;
-}
-
-#main {
-  position: relative;
-  width: 100vw;
-  aspect-ratio: 2;
-  overflow: hidden;
-}
-
-#main.event:after {
-  content: attr(story);
-  position: fixed;
-  width: 100%;
-  padding: 1rem;
-  bottom: 0;
-  background: rgba(254, 254, 254, 0.7);
-  border: 1px solid gray;
-  box-sizing: border-box;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-family: sans-serif;
-  font-weight: bold;
-  text-align: center;
-  direction: rtl;
-}
-
-.dot {
-  position: absolute;
-  background: black;
-  opacity: 1;
-}
-
-#main.event .dot:not(.event) {
-  opacity: 0.2;
-}
-</style>
 </head>
+<style type="text/css">
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+  }
+</style>
 <body>
-<div id="main" story=""></div>
+<div id="loader">
+  <div id="loading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">Loading...</div>
+</div>
+<div id="content" style="display: none; flex-direction: column; width: 100vw; height: 100vh; transition-property: background-color; transition-timing-function: linear;">
+  <div id="main" style="width: 100%; flex: 1; position: relative;"></div>
+  <div id="text" style="width: 100%; display: flex; align-items: center; justify-content: center; text-align: center;"></div>
+</div>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script type="text/javascript">
-const GOOGLE_SHEET_URL = 'https://script.googleusercontent.com/macros/echo?user_content_key=45r3lVIq6KmAUdmyJACb85pKsVCvIhN2HJyhETa9thclWOaLd2Fai4kidUQ3ucW1zA1qPrGD1FWm0KcEllQSHUKmjONVw6cFm5_BxDlH2jW0nuo2oDemN9CCS2h10ox_1xSncGQajx_ryfhECjZEnAVJGdFmIzPsmVxmnCDUAxXQLPlREa8trzQV6bBzkEkbwPeNJVE7Hq6vyw1iXfbyXxqZrKlp7bRkcZdlHtbGJsnKSd_pUqxso9z9Jw9Md8uu&lib=MyMx_4eWYGBGX3YuQHmj7DVTaCsWXOnbo'
+const LOAD_URL = 'https://script.google.com/macros/s/AKfycbzCa5qoxCtpCi7gslu45M7Be_aNlbT-FS83JVfpDkLRmn7tOWsi8k5IxAkTlUrBpJwPGw/exec?action=load'
 
-const DOTS = 600
-const SPEED = 2
-const STEP = 10
-const REMOVAL_PERCENTAGE = 0.5
-const RADIUS = 3
-const RESIZE_SPEED = 0.1
+let $main
+let configuration
 
-const EVENT_DOT_RADIUS = 6
-const TIME_BETWEEN_EVENTS = 5000
-const EVENT_TIME = 5000
+const init = async () => {
+  $main = $('#main'), $text = $('#text')
+  const { events, config } = await fetch(LOAD_URL).then(res => res.json())
+  configuration = config
+  initEvents(events, config)
+  initConfig(config)
 
-class Dot {
-  constructor (x, y, speedX, speedY, id, classes, radius=RADIUS, percent=false) {
-    Object.assign(this, { x, y, speedX, speedY, id, classes, radius, percent })
-    const corner = this.corner()
-    this.text = `<div id="${id}" class="dot ${classes}" style="left: ${corner.x}; top: ${corner.y}; width: ${2*radius}px; height: ${2*radius}px; border-radius: ${radius}px;"></div>`
-  }
-
-  move (bounds) {
-    if (!this.elem) return
-
-    const [x, hitXBound] = Dot.keepInBounds(this.x + this.speedX, 0, bounds.width)
-    const [y, hitYBound] = Dot.keepInBounds(this.y + this.speedY, 0, bounds.height)
-
-    if (hitXBound) this.speedX = -1*this.speedX
-    if (hitYBound) this.speedY = -1*this.speedY
-
-    this.x = x
-    this.y = y
-    this.recalcLocation()
-  }
-
-  resize (radius) {
-    if (!this.elem) return
-
-    this.radius = radius
-    this.recalcLocation()
-    this.elem.style.width = `${2*radius}px`
-    this.elem.style.height = `${2*radius}px`
-    this.elem.style['border-radius'] = `${radius}px`
-  }
-
-  anchor () {
-    this.anchored = true
-  }
-
-  recalcLocation () {
-    const corner = this.corner()
-    this.elem.style.left = corner.x
-    this.elem.style.top = corner.y
-  }
-
-  get elem () {
-    if (!this._elem || !document.body.contains(this._elem))
-      this._elem = document.getElementById(this.id)
-    return this._elem
-  }
-
-  corner () {
-    const unit = this.percent ? '%' : 'px'
-    return { x: `calc(${this.x}${unit} - ${this.radius}px)`, y: `calc(${this.y}${unit} - ${this.radius}px)` }
-  }
-
-  static generate (bounds, id, classes, radius=RADIUS) {
-    const x = Math.random() * bounds.width,
-          y = Math.random() * bounds.height,
-          speedX = ((Math.random() > 0.5) ? 1 : -1) * Math.random() * SPEED
-    const speedY = ((Math.random() > 0.5) ? 1 : -1) * Math.sqrt(SPEED**2 - speedX**2)
-    id = id || Dot.getNextId()
-    return new Dot(x, y, speedX, speedY, id, classes, radius)
-  }
-
-  static getNextId () {
-    Dot.LAST_ID = (Dot.LAST_ID || 0) + 1
-    return `dot-${Dot.LAST_ID}`
-  }
-
-  static collide (dot1, dot2) {
-    if ((dot1.x - dot2.x)**2 + (dot1.y - dot2.y)**2 <= (dot1.radius + dot2.radius)**2) {
-      const newSpeed1 = [dot2.speedX, dot2.speedY]
-      const newSpeed2 = [dot1.speedX, dot1.speedY]
-
-      if (dot1.anchored) {
-        dot2.speedX = -dot2.speedX
-        dot2.speedY = -dot2.speedY
-      } else if (dot2.anchored) {
-        dot1.speedX = -dot1.speedX
-        dot1.speedY = -dot1.speedY
-      } else {
-        dot1.speedX = newSpeed1[0]
-        dot1.speedY = newSpeed1[1]
-        dot2.speedX = newSpeed2[0]
-        dot2.speedY = newSpeed2[1]
-      }
-    }
-  }
-
-  static keepInBounds (val, lower, upper) {
-    if (val <= lower) {
-      return [2*lower - val, true]
-    }
-    if (val >= upper) {
-      return [2*upper - val, true]
-    }
-    return [val, false]
-  }
+  $('#loader').fadeOut(500, () => {
+    $('#content').fadeIn(500).css('display', 'flex')
+  })
 }
 
-const Events = (my => {
-  my.init = () => {
-    return load()
-  }
+const initEvents = (events, config) => {
+  const animationDuration = config['animation duration (sec)']
+  const animationDelay = config['animation delay (sec)']
+  const textTime = config['text time (sec)']
+  $main[0].innerHTML = events.map(event => {
+    const image = event['image file']
+    const audio = event['audio file']
+    const dotPosX = event['dot position x (%)'], dotPosY = event['dot position y (%)'], dotWidth = event['dot width (px)'], dotHeight = event['dot height (px)']
+    const iconCenterX = event['icon center x (px)'], iconCenterY = event['icon center y (px)'], iconWidth = event['icon width (px)'], iconHeight = event['icon height (px)']
+    const imageWidth = event['image width (px)'], imageHeight = event['image height (px)']
+    const text = event['text (split by newline)']
 
-  load = async () => {
-    const response = await fetch(GOOGLE_SHEET_URL)
-    const lines = await response.json()
+    return `
+      <div referrerPolicy="no-referrer" style="position: absolute;
+        left: calc(${dotPosX}% - ${iconWidth / 2}px); bottom: calc(${dotPosY}% - ${iconHeight / 2}px); aspect-ratio: ${iconWidth / iconHeight}; height: ${iconHeight}px;
+        background-image: url(${image});
+        background-size: ${imageWidth / iconWidth * 100}% ${imageHeight / iconHeight * 100}%;
+        background-position: calc(${iconCenterX}px - ${dotWidth / 2}px) calc(${iconCenterY}px - ${dotHeight / 2}px);
+        background-repeat: no-repeat;
+        transition-property: background-position, background-size, bottom, left, aspect-ratio, height;
+        transition-duration: ${animationDuration || 1}s;
+        transition-timing-function: linear;
+        transition-delay: ${animationDelay || 0}s;
+        "> 
+      </div>
+    `
+  }).join('')
 
-    const header = lines.shift()
-    my.all = shuffle(lines.map(line => header.reduce((obj, key, index) => ({ ...obj, [key]: line[index] }), { })))
-  }
+  setTimeout(() => {
+    const children = $main.children()
+    events.forEach((event, i) => {
+      event.$image = $(children[i])
+      console.log(event)
+      event.$image.on('click', () => {
+        openImage(event, config)
+        setTimeout(() => {
+          startAudio(event, config)
 
-  shuffle = array => {
-    let currnetLength = array.length, randomIndex;
-    while (currnetLength !== 0) {
-      randomIndex = Math.floor(Math.random() * currnetLength)
-      currnetLength--
-      [array[currnetLength], array[randomIndex]] = [array[randomIndex], array[currnetLength]]
-    }
-  return array;
+          const texts = event['text (split by newline)'].split('\n')
+          let currentText = 0
+          const next = () => {
+            if (currentText < texts.length) {
+              $text[0].innerHTML = texts[currentText++]
+              setTimeout(next, (config['text time (sec)'] || 5) * 1000)
+            } else {
+              $text[0].innerHTML = ''
+              closeImage(event, config)
+            }
+          }
+
+          next()
+        }, (config['animation duration (sec)'] || 1) * 1000)
+      })
+    })
+  }, 1000)
 }
 
-  return my
-}) ({ })
+const initConfig = config => {
+  const audioVolume = config['audio volume (%)']
+  const mainBackgroundColor = config['main background color']
+  const textAreaHeight = config['text area height (%)']
+  const textAreaBackgroundColor = config['text area background color']
+  const textColor = config['text color']
+  const textSize = config['text size (px)']
 
-const Dots = (my => {
+  $main.css({
+    backgroundColor: mainBackgroundColor,
+    transitionDuration: `${config['animation duration (sec)'] || 1}s`,
+  })
 
-  let main, dots, bounds, playing, _events, currentEventIndex = 0
+  $text.css({
+    height: `${textAreaHeight || 20}%`,
+    color: textColor || 'black',
+    fontSize: `${textSize || 20}px`,
+    backgroundColor: textAreaBackgroundColor || 'white',
+  })
+}
 
-  my.init = events => {
-    _events = events
-    main = document.getElementById('main')
-    bounds = document.body.getBoundingClientRect()
-    let buffer = ''
-    dots = new Array(DOTS).fill(1).map((a, i) => {
-      const dot = Dot.generate(bounds, i, [])
-      buffer += dot.text
-      return dot
-    })
-    main.innerHTML = buffer
+const openImage = (event, config) => {
+  $main.css({ backgroundColor: config['image background color'] })
+  const mainWidth = $main.width(), mainHeight = $main.height()
+  event.$image.css({ bottom: 0, left: `${(mainWidth - mainHeight * event['image width (px)'] / event['image height (px)']) / 2}px`, height: '100%', aspectRatio: `${event['image width (px)']/event['image height (px)']}`, backgroundPosition: 'center', backgroundSize: '100% 100%' })
+}
 
-    playing = true
-    setInterval(step, STEP)
+const closeImage = (event, config) => {
+  const dotPosX = event['dot position x (%)'], dotPosY = event['dot position y (%)'], dotWidth = event['dot width (px)'], dotHeight = event['dot height (px)']
+  const iconCenterX = event['icon center x (px)'], iconCenterY = event['icon center y (px)'], iconWidth = event['icon width (px)'], iconHeight = event['icon height (px)']
+  const imageWidth = event['image width (px)'], imageHeight = event['image height (px)']
 
-    setTimouetToEvent()
-  }
+  $main.css({ backgroundColor: config['main background color'] })
+  event.$image.css({
+    left: `calc(${dotPosX}% - ${iconWidth / 2}px)`,
+    bottom: `calc(${dotPosY}% - ${iconHeight / 2}px)`,
+    aspectRatio: `${iconWidth / iconHeight}`,
+    height: `${iconHeight}px`,
+    backgroundSize: `${imageWidth / iconWidth * 100}% ${imageHeight / iconHeight * 100}%`,
+    backgroundPosition: `calc(${iconCenterX}px - ${dotWidth / 2}px) calc(${iconCenterY}px - ${dotHeight / 2}px)`
+  })
+}
 
-  const step = () => {
-    if (!playing) return
-    dots.forEach((dot, index) => {
-      for (let otherIndex = index + 1; otherIndex < dots.length; otherIndex++) {
-        Dot.collide(dot, dots[otherIndex])
-      }
-      dot.move(bounds)
-    })
-  }
+const startAudio = (event, config) => {
+  setTimeout(() =>{
+    const audio = new Audio(event['audio file'])
+    audio.volume = (config['audio volume (%)'] || 100) / 100
+    audio.play()
+  })
+}
 
-  const setTimouetToEvent = () => {
-    setTimeout(async () => {
-      const event = _events[currentEventIndex]
-      currentEventIndex = currentEventIndex + 1
-      const dot = addEvent(event)
-      story(event.text)
-      my.toggle()
-      await resize(dot, EVENT_DOT_RADIUS)
-      setTimeout(() => {
-        if (_events[currentEventIndex])  setTimouetToEvent()
-        my.toggle()
-      }, EVENT_TIME)
-    }, TIME_BETWEEN_EVENTS)
-  }
-
-  my.toggle = () => {
-    main.classList.toggle('event')
-    playing = !playing
-  }
-
-  const story = story => {
-    main.setAttribute('story', story)
-  }
-
-  const addEvent = event => {
-    const dot = new Dot(100*event['x%'], 100*event['y%'], 0, 0, `event-${Dot.getNextId()}`, 'event', RADIUS, true)
-    dot.anchor()
-    main.innerHTML += dot.text
-    dots.push(dot)
-    return dot
-  }
-
-  const resize = (dot, radius) => {
-    return new Promise(resolve => {
-      const resizeStep = () => {
-      setTimeout(() => {
-        dot.resize(dot.radius + RESIZE_SPEED)
-        if (dot.radius < radius)  resizeStep()
-        else resolve()
-      }, STEP)
-    }
-    resizeStep()
-    })
-  }
-
-  return my
-
-}) ({ })
-
-document.addEventListener('DOMContentLoaded', async () => {
-  await Events.init()
-  Dots.init(Events.all)
-})
-
+$(document).ready(init)
 </script>
 </body>
 </html>
