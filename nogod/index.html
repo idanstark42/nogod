@@ -16,11 +16,11 @@
 </div>
 <div id="content" style="display: none; flex-direction: column; width: 100vw; height: 100vh; transition-property: background-color; transition-timing-function: linear;">
   <div id="main" style="position: relative; margin: auto;"></div>
-  <div id="text" style="width: 100%; display: flex; align-items: center; justify-content: center; text-align: center;"></div>
+  <div id="text" style="width: 100%; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 20%; box-sizing: border-box;"></div>
 </div>
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script type="text/javascript">
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbw8-xV3nsPtiCBWkjEJgdkgNKO0Amyn5hzCcCjuHw-AMqZb8jzv0jUz7bQLbBDOBvwdyQ/exec'
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbyRDXwbRYqNSX6FnR91g5uyXQ3ujeYKk4eIqcs6TIl-F-lXAePs61DoP6weFx7c5iCa8A/exec'
 
 let $main
 let configuration
@@ -29,7 +29,7 @@ const init = async () => {
   $main = $('#main'), $text = $('#text'), $content = $('#content')
   const { events, config } = await fetch(`${BASE_URL}?action=load`).then(res => res.json())
   configuration = config
-  initEvents(events, config)
+  initEvents((events || []).filter(event => event['dot position x (%)'] && event['dot position y (%)']), config)
   initConfig(config)
 
   $('#loader').fadeOut(500, () => {
@@ -38,111 +38,116 @@ const init = async () => {
 }
 
 const initEvents = (events, config) => {
-  const animationDuration = config['animation duration (sec)']
-  const animationDelay = config['animation delay (sec)']
-  const textTime = config['text time (sec)']
-  const mapHeight = config['map height (px)']
   $main[0].innerHTML = events.map(event => {
-    if (!event['dot position x (%)'] || !event['dot position y (%)']) {
-      return ''
-    }
-
-    const audio = event['audio file']
-    const dotPosX = event['dot position x (%)'], dotPosY = event['dot position y (%)']
-    const dotHeight = event['dot height (px)'] / mapHeight * 100, aspectRatio = event['dot width (px)'] / event['dot height (px)']
+    const dotHeight = event['dot height (px)'] / config['map height (px)'] * 100, aspectRatio = event['dot width (px)'] / event['dot height (px)']
     const dotWidth = dotHeight * aspectRatio
-    const iconCenterX = event['icon center x (px)'], iconCenterY = event['icon center y (px)'], iconWidth = event['icon width (px)'], iconHeight = event['icon height (px)']
-    const imageWidth = event['image width (px)'], imageHeight = event['image height (px)']
-    const text = event['text (split by newline)']
-    const borderRadius = config['icons rounding (%)'] / 2
 
     return `
-      <div referrerPolicy="no-referrer" style="position: absolute;
-        left: calc(${dotPosX}% - ${dotWidth / 2}px); top: calc(${dotPosY}% - ${dotHeight / 2}px); aspect-ratio: ${aspectRatio}; height: ${dotHeight}%;
-        background-size: ${imageWidth / iconWidth * 100}% ${imageHeight / iconHeight * 100}%;
-        border-radius: ${borderRadius}%;
-        background-repeat: no-repeat;
+      <div referrerPolicy="no-referrer" style="
+        position: absolute;
+        left: calc(${event['dot position x (%)']}% - ${dotWidth / 2}px);
+        top: calc(${event['dot position y (%)']}% - ${dotHeight / 2}px);
+        height: ${dotHeight}%; aspect-ratio: ${aspectRatio};
+
         transition-property: background-position, background-size, top, left, aspect-ratio, height, border-radius, opacity;
-        transition-duration: ${animationDuration || 1}s;
         transition-timing-function: linear;
-        transition-delay: ${animationDelay || 0}s;
+        transition-duration: ${config['animation fade duration (sec)'] || 1}s;
+        transition-delay: ${config['animation delay (sec)'] || 0}s;
+        
+        border-radius: ${config['icons rounding (%)'] / 2}%;
+        background-repeat: no-repeat;
         background-color: black;
-        " title="${event['text story']}">
+        "
+        title="${event['text story']}">
       </div>
     `
   }).join('')
+
+  let loaded = 0
+  $text[0].innerHTML = `Still loading... Please wait.<br/>${loaded}/${events.length * 2}`
+
+  const addToLoader = () => {
+    loaded += 1
+    $text[0].innerHTML = `Still loading... Please wait.<br/>${loaded}/${events.length * 2}`
+    if (loaded === events.length * 2) {
+      $text[0].innerHTML = ''
+      $text.css({ direction: 'rtl' })
+    }
+  }
 
   setTimeout(() => {
     const children = $main.children()
     events.forEach((event, i) => {
       event.$image = $main.find(`div[title="${event['text story']}"]`)
+
       fetch(`${BASE_URL}?action=get&filetype=image&filename=${event['image file']}`).then(res => res.text()).then(data => {
-        event.$image.css({ backgroundImage: `url(${data})` })
+        event.$image.css({
+          backgroundImage: `url(${data})`,
+          backgroundSize: `${$main.width()}px ${$main.height()}px`,
+          backgroundPosition: `left ${event['icon center x (%)']}% top ${event['icon center y (%)']}%`,
+        })
+
+        addToLoader()
       })
+
+      fetch(`${BASE_URL}?action=get&filetype=audio&filename=${event['audio file']}`).then(res => res.text()).then(data => {
+        event['sound'] = data
+        addToLoader()
+      })
+
       event.$image.on('click', e => {
         // select correct event using the target
         const currentEvent = events.find(event => event.$image[0] === e.target)
         console.log(e, currentEvent)
         openImage(currentEvent, config)
         setTimeout(() => {
-          startAudio(currentEvent, config)
-          runText(currentEvent, config)
-        }, (config['animation duration (sec)'] || 1) * 1000 * 3)
+          closeImage(currentEvent, config)
+        //   startAudio(currentEvent, config)
+        //   runText(currentEvent, config)
+        }, (config['animation fade duration (sec)'] + config['animation move duration (sec)'] + config['animation open duration (sec)']) * 1000)
       })
     })
-  }, 1000)
+  })
 }
 
 const initConfig = config => {
-  const mapAspectRatio = config['map aspect ratio']
-  const audioVolume = config['audio volume (%)']
-  const mainBackgroundColor = config['main background color']
-  const textAreaHeight = config['text area height (%)']
-  const textAreaBackgroundColor = config['text area background color']
-  const deadzoneBackgroundColor = config['deadzone background color']
-  const textColor = config['text color']
-  const textSize = config['text size (px)']
+  const textAreaHeight = config['text area height (%)'] || 20
 
   $main.css({
-    backgroundColor: mainBackgroundColor,
-    aspectRatio: String(mapAspectRatio),
-    height: `${textAreaHeight ? (100 - textAreaHeight) : 80}%`,
-    transitionDuration: `${config['animation duration (sec)'] || 1}s`,
+    backgroundColor: config['main background color'],
+    aspectRatio: String(config['map aspect ratio']),
+    transitionDuration: '1s',
+    height: `${100 - textAreaHeight}%`,
   })
 
   $text.css({
-    height: `${textAreaHeight || 20}%`,
-    color: textColor || 'black',
-    fontSize: `${textSize || 20}px`,
-    backgroundColor: textAreaBackgroundColor || 'white',
+    height: `${textAreaHeight}%`,
+    color: config['text color'] || 'black',
+    fontSize: `${config['text size (px)'] || 20}px`,
+    backgroundColor: config['text area background color'] || 'white',
   })
 
-  $content.css({ backgroundColor: deadzoneBackgroundColor })
+  $content.css({ backgroundColor: config['deadzone background color'] })
 }
 
 const openImage = (event, config) => {
   $main.children().filter((i, el) => el !== event.$image[0]).css({ opacity: 0 })
   setTimeout(() => {
-    const mapHeight = config['map height (px)']
-    const iconCenterX = event['icon center x (px)'], iconCenterY = event['icon center y (px)'], iconWidth = event['icon width (px)'], iconHeight = event['icon height (px)'],
-      dotHeight = event['dot height (px)'] / mapHeight * 100, aspectRatio = event['dot width (px)'] / event['dot height (px)'], dotWidth = dotHeight * aspectRatio,
-      imageWidth = event['image width (px)'], imageHeight = event['image height (px)']
-    event.$image.css({ top: iconCenterY - dotHeight / 2, left: iconCenterX - dotWidth / 2 })
+    const dotHeight = event['dot height (px)'] / config['map height (px)'] * 100, aspectRatio = event['dot width (px)'] / event['dot height (px)'], dotWidth = dotHeight * aspectRatio
+    event.$image.css({ transitionDuration: `${config['animation move duration (sec)']}s` })
+    event.$image.css({ left: `calc(${event['icon center x (%)']}% - ${dotHeight / 2}px)`, left: `calc(${event['icon center y (%)']}% - ${dotWidth / 2}px)` })
 
     setTimeout(() => {
       const mainWidth = $main.width(), mainHeight = $main.height()
+      event.$image.css({ transitionDuration: `${config['animation open duration (sec)']}s` })
       event.$image.css({
         top: 0, left: `${(mainWidth - mainHeight * event['image width (px)'] / event['image height (px)']) / 2}px`,
         height: '100%', aspectRatio: `${event['image width (px)']/event['image height (px)']}`,
-        backgroundSize: '100% 100%',
+        backgroundPosition: 'center',
         borderRadius: 0
       })
-    
-      setTimeout(() => {
-        $main.css({ backgroundColor: config['image background color'] })
-      }, config['animation duration (sec)'] * 1000)
-    }, config['animation duration (sec)'] * 1000)
-  }, config['animation duration (sec)'] * 1000)
+    }, config['animation move duration (sec)'] * 1000)
+  }, config['animation fade duration (sec)'] * 1000)
 }
 
 const closeImage = (event, config) => {
@@ -152,33 +157,31 @@ const closeImage = (event, config) => {
     dotHeight = event['dot height (px)'] / mapHeight * 100, aspectRatio = event['dot width (px)'] / event['dot height (px)'], dotWidth = dotHeight * aspectRatio,
     imageWidth = event['image width (px)'], imageHeight = event['image height (px)']
 
-  $main.css({ backgroundColor: config['main background color'] })
+  // going back to the original size
+  event.$image.css({ transitionDuration: `${config['animation open duration (sec)']}s` })
+  event.$image.css({
+    top: iconCenterY - dotHeight / 2, left: iconCenterX - dotWidth / 2,
+    aspectRatio: String(aspectRatio), height: `${dotHeight}%`,
+    borderRadius: config['icons rounding (%)'] / 2
+  })
 
   setTimeout(() => {
-    // going back to the original size
+    event.$image.css({ transitionDuration: `${config['animation move duration (sec)']}s` })
     event.$image.css({
-      top: iconCenterY - dotHeight / 2, left: iconCenterX - dotWidth / 2,
-      aspectRatio: String(aspectRatio), height: `${dotHeight}%`,
-      backgroundSize: `${imageWidth / iconWidth * 100}% ${imageHeight / iconHeight * 100}%`,
-      borderRadius: config['icons rounding (%)'] / 2
+      left: `calc(${dotPosX}% - ${dotWidth / 2}px)`,
+      top: `calc(${dotPosY}% - ${dotHeight / 2}px)`,
     })
-
+  
     setTimeout(() => {
-      event.$image.css({
-        left: `calc(${dotPosX}% - ${dotWidth / 2}px)`,
-        top: `calc(${dotPosY}% - ${dotHeight / 2}px)`,
-      })
-    
-      setTimeout(() => {
-        $main.children().css({ opacity: 1 })
-      }, config['animation duration (sec)'] * 1000)
-    }, config['animation duration (sec)'] * 1000)
-  }, config['animation duration (sec)'] * 1000)
+      event.$image.css({ transitionDuration: `${config['animation fade duration (sec)']}s` })
+      $main.children().css({ opacity: 1 })
+    }, config['animation m duration (sec)'] * 1000)
+  }, config['animation open duration (sec)'] * 1000)
 }
 
 const startAudio = (event, config) => {
   setTimeout(() =>{
-    const audio = new Audio(event['audio file'])
+    const audio = new Audio(event['sound'])
     audio.volume = (config['audio volume (%)'] || 100) / 100
     audio.play()
   })
@@ -197,7 +200,7 @@ const runText = (event, config) => {
     }
   }
 
-  next()
+  setTimeout(() => next(), event['text delay (sec)'] * 1000)
 }
 
 $(document).ready(init)
