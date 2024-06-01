@@ -83,8 +83,8 @@ const initEvents = (events, config) => {
       fetch(`${BASE_URL}?action=get&filetype=image&filename=${event['image file']}`).then(res => res.text()).then(data => {
         event.$image.css({
           backgroundImage: `url(${data})`,
-          backgroundSize: `${$main.width()}px ${$main.height()}px`,
-          backgroundPosition: `left ${event['icon center x (%)']}% top ${event['icon center y (%)']}%`,
+          backgroundSize: `${event['image width (px)'] / event['icon width (px)'] * 100}% ${event['image height (px)'] / event['icon height (px)'] * 100}%`,
+          backgroundPosition: `left ${event['icon center x (%)'] - event['icon width (px)'] / event['image width (px)'] * 50}% top ${event['icon center y (%)'] - event['icon height (px)'] / event['image height (px)'] * 50}%`,
         })
 
         addToLoader()
@@ -102,8 +102,8 @@ const initEvents = (events, config) => {
         openImage(currentEvent, config)
         setTimeout(() => {
           closeImage(currentEvent, config)
-        //   startAudio(currentEvent, config)
-        //   runText(currentEvent, config)
+          startAudio(currentEvent, config)
+          runText(currentEvent, config)
         }, (config['animation fade duration (sec)'] + config['animation move duration (sec)'] + config['animation open duration (sec)']) * 1000)
       })
     })
@@ -133,17 +133,20 @@ const initConfig = config => {
 const openImage = (event, config) => {
   $main.children().filter((i, el) => el !== event.$image[0]).css({ opacity: 0 })
   setTimeout(() => {
+    // move the image to the correct position
     const dotHeight = event['dot height (px)'] / config['map height (px)'] * 100, aspectRatio = event['dot width (px)'] / event['dot height (px)'], dotWidth = dotHeight * aspectRatio
     event.$image.css({ transitionDuration: `${config['animation move duration (sec)']}s` })
-    event.$image.css({ left: `calc(${event['icon center x (%)']}% - ${dotHeight / 2}px)`, left: `calc(${event['icon center y (%)']}% - ${dotWidth / 2}px)` })
+    event.$image.css({ left: `calc(${event['icon center x (%)']}% - ${dotHeight / 2}px)`, top: `calc(${event['icon center y (%)']}% - ${dotWidth / 2}px)` })
 
     setTimeout(() => {
+      // open the image
       const mainWidth = $main.width(), mainHeight = $main.height()
       event.$image.css({ transitionDuration: `${config['animation open duration (sec)']}s` })
       event.$image.css({
-        top: 0, left: `${(mainWidth - mainHeight * event['image width (px)'] / event['image height (px)']) / 2}px`,
-        height: '100%', aspectRatio: `${event['image width (px)']/event['image height (px)']}`,
+        top: 0, left: 0,
+        height: '100%', aspectRatio: String(mainWidth / mainHeight),
         backgroundPosition: 'center',
+        backgroundSize: '100% 100%',
         borderRadius: 0
       })
     }, config['animation move duration (sec)'] * 1000)
@@ -160,12 +163,15 @@ const closeImage = (event, config) => {
   // going back to the original size
   event.$image.css({ transitionDuration: `${config['animation open duration (sec)']}s` })
   event.$image.css({
-    top: iconCenterY - dotHeight / 2, left: iconCenterX - dotWidth / 2,
+    left: `calc(${event['icon center x (%)']}% - ${dotHeight / 2}px)`, top: `calc(${event['icon center y (%)']}% - ${dotWidth / 2}px)`,
+    backgroundSize: `${event['image width (px)'] / event['icon width (px)'] * 100}% ${event['image height (px)'] / event['icon height (px)'] * 100}%`,
+    backgroundPosition: `left ${event['icon center x (%)'] - event['icon width (px)'] / event['image width (px)'] * 50}% top ${event['icon center y (%)'] - event['icon height (px)'] / event['image height (px)'] * 50}%`,
     aspectRatio: String(aspectRatio), height: `${dotHeight}%`,
     borderRadius: config['icons rounding (%)'] / 2
   })
 
   setTimeout(() => {
+    // moving the image back to the original position
     event.$image.css({ transitionDuration: `${config['animation move duration (sec)']}s` })
     event.$image.css({
       left: `calc(${dotPosX}% - ${dotWidth / 2}px)`,
@@ -173,6 +179,7 @@ const closeImage = (event, config) => {
     })
   
     setTimeout(() => {
+      // revealing the other points
       event.$image.css({ transitionDuration: `${config['animation fade duration (sec)']}s` })
       $main.children().css({ opacity: 1 })
     }, config['animation m duration (sec)'] * 1000)
