@@ -63,12 +63,13 @@ const initEvents = (events, config) => {
   }).join('')
 
   let loaded = 0
-  $text[0].innerHTML = `Still loading... Please wait.<br/>${loaded}/${events.length * 2}`
+  const total = events.length + events.reduce((acc, event) => acc + event['image files'].split('\n').length, 0)
+  $text[0].innerHTML = `Still loading... Please wait.<br/>${loaded}/${total}`
 
   const addToLoader = () => {
     loaded += 1
-    $text[0].innerHTML = `Still loading... Please wait.<br/>${loaded}/${events.length * 2}`
-    if (loaded === events.length * 2) {
+    $text[0].innerHTML = `Still loading... Please wait.<br/>${loaded}/${total}`
+    if (loaded === total) {
       $text[0].innerHTML = ''
       $text.css({ direction: 'rtl' })
     }
@@ -78,16 +79,24 @@ const initEvents = (events, config) => {
     const children = $main.children()
     events.forEach((event, i) => {
       event.$image = $main.find(`div[title="${event['text story']}"]`)
+      event.images = []
 
-      fetch(`${BASE_URL}?action=get&filetype=image&filename=${event['image file']}`).then(res => res.text()).then(data => {
-        event.$image.css({
-          backgroundImage: `url(${data})`,
-          backgroundSize: `${event['image width (px)'] / event['icon width (px)'] * 100}% ${event['image height (px)'] / event['icon height (px)'] * 100}%`,
-          backgroundPosition: `left ${event['icon center x (%)'] - event['icon width (px)'] / event['image width (px)'] * 50}% top ${event['icon center y (%)'] - event['icon height (px)'] / event['image height (px)'] * 50}%`,
+      for (let imageFile of event['image files'].split('\n')) {
+        // if image file contains time, then it will be the delay before the next image
+        if (imageFile.match(/\[(\d+)\]$/)) {
+          imageFile = imageFile.replace(/\[(\d+)\]$/, '')
+        }
+        fetch(`${BASE_URL}?action=get&filetype=image&filename=${imageFile}`).then(res => res.text()).then(data => {
+          event.images.push(data)
+          event.$image.css({
+            backgroundImage: `url(${data})`,
+            backgroundSize: `${event['image width (px)'] / event['icon width (px)'] * 100}% ${event['image height (px)'] / event['icon height (px)'] * 100}%`,
+            backgroundPosition: `left ${event['icon center x (%)'] - event['icon width (px)'] / event['image width (px)'] * 50}% top ${event['icon center y (%)'] - event['icon height (px)'] / event['image height (px)'] * 50}%`,
+          })
+
+          addToLoader()
         })
-
-        addToLoader()
-      })
+      }
 
       fetch(`${BASE_URL}?action=get&filetype=audio&filename=${event['audio file']}`).then(res => res.text()).then(data => {
         event['sound'] = data
@@ -147,8 +156,33 @@ const openImage = (event, config) => {
         backgroundSize: '100% 100%',
         borderRadius: 0
       })
+
+      setTimeout(() => {
+        startCarousel(event, config)
+      }, config['animation open duration (sec)'] * 1000)
     }, config['animation move duration (sec)'] * 1000)
   }, config['animation fade duration (sec)'] * 1000)
+}
+
+const startCarousel = (event, config) => {
+  let currentImage = 0
+  const imageFiles = event['image files'].split('\n')
+  const next = () => {
+    if (currentImage >= event.images.length) {
+      currentImage = 0
+    }
+    let delay = config['image time (sec)'] || 5
+    if (imageFiles[currentImage].match(/\[(\d+)\]$/)) {
+      delay = parseInt(imageFiles[currentImage].match(/\[(\d+)\]$/)[1])
+    }
+    event.$image.css({ backgroundImage: `url(${event.images[currentImage++]})` })
+    console.log(delay)
+    event.carouslTimeout = setTimeout(next, delay * 1000)
+  }
+
+  const firstImageTime = imageFiles[0].match(/\[(\d+)\]$/) ? parseInt(imageFiles[0].match(/\[(\d+)\]$/)[1]) : (config['image time (sec)'] || 5)
+  console.log(firstImageTime)
+  event.carouslTimeout = setTimeout(() => next(), firstImageTime * 1000)
 }
 
 const closeImage = (event, config) => {
@@ -168,6 +202,8 @@ const closeImage = (event, config) => {
     borderRadius: config['icons rounding (%)'] / 2
   })
 
+  clearTimeout(event.carouslTimeout)
+
   setTimeout(() => {
     // moving the image back to the original position
     event.$image.css({ transitionDuration: `${config['animation move duration (sec)']}s` })
@@ -180,7 +216,7 @@ const closeImage = (event, config) => {
       // revealing the other points
       event.$image.css({ transitionDuration: `${config['animation fade duration (sec)']}s` })
       $main.children().css({ opacity: 1 })
-    }, config['animation m duration (sec)'] * 1000)
+    }, config['animation move duration (sec)'] * 1000)
   }, config['animation open duration (sec)'] * 1000)
 }
 
