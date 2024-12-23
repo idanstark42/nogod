@@ -22,6 +22,8 @@
 <script type="text/javascript">
 const BASE_URL = 'https://script.google.com/macros/s/AKfycbyRDXwbRYqNSX6FnR91g5uyXQ3ujeYKk4eIqcs6TIl-F-lXAePs61DoP6weFx7c5iCa8A/exec'
 
+const NUMBER_REGEX = /\[(\d+(\.\d+)?)\]$/
+
 let $main, $text, $content, configuration
 
 const init = async () => {
@@ -83,8 +85,8 @@ const initEvents = (events, config) => {
 
       for (let imageFile of event['image files'].split('\n')) {
         // if image file contains time, then it will be the delay before the next image
-        if (imageFile.match(/\[(\d+)\]$/)) {
-          imageFile = imageFile.replace(/\[(\d+)\]$/, '')
+        if (imageFile.match(NUMBER_REGEX)) {
+          imageFile = imageFile.replace(NUMBER_REGEX, '')
         }
         fetch(`${BASE_URL}?action=get&filetype=image&filename=${imageFile}`).then(res => res.text()).then(data => {
           event.images.push(data)
@@ -106,7 +108,6 @@ const initEvents = (events, config) => {
       event.$image.on('click', e => {
         // select correct event using the target
         const currentEvent = events.find(event => event.$image[0] === e.target)
-        console.log(e, currentEvent)
         openImage(currentEvent, config)
         setTimeout(() => {
           startAudio(currentEvent, config)
@@ -172,16 +173,14 @@ const startCarousel = (event, config) => {
       currentImage = 0
     }
     let delay = config['image time (sec)'] || 5
-    if (imageFiles[currentImage].match(/\[(\d+)\]$/)) {
-      delay = parseInt(imageFiles[currentImage].match(/\[(\d+)\]$/)[1])
+    if (imageFiles[currentImage].match(NUMBER_REGEX)) {
+      delay = parseInt(imageFiles[currentImage].match(NUMBER_REGEX)[1])
     }
     event.$image.css({ backgroundImage: `url(${event.images[currentImage++]})` })
-    console.log(delay)
     event.carouslTimeout = setTimeout(next, delay * 1000)
   }
 
-  const firstImageTime = imageFiles[0].match(/\[(\d+)\]$/) ? parseInt(imageFiles[0].match(/\[(\d+)\]$/)[1]) : (config['image time (sec)'] || 5)
-  console.log(firstImageTime)
+  const firstImageTime = imageFiles[0].match(NUMBER_REGEX) ? parseInt(imageFiles[0].match(NUMBER_REGEX)[1]) : (config['image time (sec)'] || 5)
   event.carouslTimeout = setTimeout(() => next(), firstImageTime * 1000)
 }
 
@@ -234,18 +233,15 @@ const runText = (event, config) => {
   const next = () => {
     if (currentText < texts.length) {
       let text = texts[currentText++]
-      // if texts ends with [\d+], then it will be the delay before the next text
       let delay = config['text time (sec)'] || 5
-      if (text.match(/\[(\d+)\]$/)) {
-        delay = parseInt(text.match(/\[(\d+)\]$/)[1])
-        text = text.replace(/\[(\d+)\]$/, '')
+      if (text.match(NUMBER_REGEX)) {
+        delay = parseInt(text.match(NUMBER_REGEX)[1])
+        text = text.replace(NUMBER_REGEX, '')
       }
-      console.log(text, delay, new Date().toLocaleTimeString())
       $text[0].innerHTML = text + subtext(event, config)
       setTimeout(next, delay * 1000)
     } else {
       $text[0].innerHTML = ''
-      closeSubtext(event, config)
       closeImage(event, config)
     }
   }
@@ -254,7 +250,7 @@ const runText = (event, config) => {
 }
 
 const subtext = (event, config) => {
-  return `<p class='subtext' style="font-size: 0.8em">
+  return `<p class='subtext' style="font-size: ${config['subtext size (px)'] || 15}px">
     ${event['subtext']}
 </p>`
 }
