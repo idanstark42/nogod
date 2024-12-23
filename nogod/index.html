@@ -28,7 +28,9 @@ let $main, $text, $content, configuration
 
 const init = async () => {
   $main = $('#main'), $text = $('#text'), $content = $('#content')
-  const { events, config } = await fetch(`${BASE_URL}?action=load`).then(res => res.json())
+  const response = await fetch(`${BASE_URL}?action=load`).then(res => res.json())
+  console.log(response)
+  const config = response.config, events = response.events.filter(event => event['enabled'])
   configuration = config
   initEvents((events || []).filter(event => event['dot position x (%)'] && event['dot position y (%)']), config)
   initConfig(config)
