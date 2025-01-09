@@ -14,26 +14,33 @@
 <div id="loader">
   <div id="loading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">Loading...</div>
 </div>
-<div id="content" style="display: none; flex-direction: column; width: 100vw; height: 100vh; transition-property: background-color; transition-timing-function: linear;">
-  <div id="main" style="position: relative; margin: auto;"></div>
-  <div id="text" style="width: 100%; display: flex; flex-direction: column; gap: 0.5em; align-items: center; justify-content: center; text-align: center; padding: 0 20%; box-sizing: border-box;"></div>
+<div id="content" style="display: none; position: relative; width: 100vw; height: 100vh; transition-property: background-color; transition-timing-function: linear;">
+  <div id="main-container" style="position: absolute; width: 100%; background: none;">
+    <div id="main" style="position: relative; margin: auto; height: 100%;"></div>
+  </div>
+  <div id="text" style="position: absolute; width: 100%; display: flex; flex-direction: column; gap: 0.5em; align-items: center; justify-content: center; text-align: center; padding: 0 20%; box-sizing: border-box;"></div>
+  <div id="subtext" style="position: absolute; width: 100%; display: flex; flex-direction: column; gap: 0.5em; align-items: center; justify-content: center; text-align: center; padding: 0 20%; box-sizing: border-box;"></div>
 </div>
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script type="text/javascript">
-const BASE_URL = 'https://script.google.com/macros/s/AKfycbyRDXwbRYqNSX6FnR91g5uyXQ3ujeYKk4eIqcs6TIl-F-lXAePs61DoP6weFx7c5iCa8A/exec'
+const BASE_URL = 'https://script.google.com/macros/s/AKfycbzHy1-Goj8fH9GHZgNfggYbmlx-iymlXa7vh0OpjIh1iJ6Jx4KWYGHR8EuYedpc7639gQ/exec'
 
 const NUMBER_REGEX = /\[(\d+(\.\d+)?)\]$/
 
-let $main, $text, $content, configuration
+let $mainContainer, $main, $text, $subtext, $content, configuration
 
 const init = async () => {
-  $main = $('#main'), $text = $('#text'), $content = $('#content')
-  const response = await fetch(`${BASE_URL}?action=load`).then(res => res.json())
+  $mainContainer = $('#main-container'), $main = $('#main'), $text = $('#text'), $subtext = $('#subtext'), $content = $('#content')
+  const version = new URLSearchParams(window.location.search).get('version') || 1
+  const response = await fetch(`${BASE_URL}?action=load&version=${version}`).then(res => res.json())
   console.log(response)
   const config = response.config, events = response.events.filter(event => event['enabled'])
   configuration = config
   initEvents((events || []).filter(event => event['dot position x (%)'] && event['dot position y (%)']), config)
   initConfig(config)
+  if (config['show dots']) {
+    initDots(config)
+  }
 
   $('#loader').fadeOut(500, () => {
     $('#content').fadeIn(500)
@@ -118,26 +125,81 @@ const initEvents = (events, config) => {
       })
     })
   })
+
+  // load google font for each event
+  events.forEach(event => {
+    importGoogleFont(event['text font'])
+    importGoogleFont(event['subtext font'])
+  })
 }
 
 const initConfig = config => {
-  const textAreaHeight = config['text area height (%)'] || 20
-
+  $mainContainer.css({ height: `${config['image area height (%)'] || 50}%`, bottom: `${config['image area position (%)'] || 50}%` })
   $main.css({
     backgroundColor: config['main background color'],
     aspectRatio: String(config['map aspect ratio']),
-    transitionDuration: '1s',
-    height: `${100 - textAreaHeight}%`,
+    transitionDuration: '1s'
   })
 
   $text.css({
-    height: `${textAreaHeight}%`,
+    bottom: `${config['text position (%)'] || 30}%`,
     color: config['text color'] || 'black',
     fontSize: `${config['text size (px)'] || 20}px`,
     backgroundColor: config['text area background color'] || 'white',
   })
 
+  $subtext.css({
+    bottom: `${config['subtext position (%)'] || 20}%`,
+    color: config['text color'] || 'black',
+    fontSize: `${config['subtext size (px)'] || 15}px`,
+    backgroundColor: config['text area background color'] || 'white',
+  })
+
   $content.css({ backgroundColor: config['deadzone background color'] })
+}
+
+const initDots = config => {
+  const numberOfDots = config['dots count']
+  const dotSize = config['dots size']
+  const dotSpeed = config['dots speed']
+
+  class Dot {
+    constructor (x, y, speedX, speedY, $element) {
+      this.x = x
+      this.y = y
+      this.speedX = speedX
+      this.speedY = speedY
+      this.$element = $element
+    }
+
+    move () {
+      this.x += this.speedX
+      this.y += this.speedY
+      if (this.x < 0 || this.x > 100) {
+        this.speedX *= -1
+      }
+      if (this.y < 0 || this.y > 100) {
+        this.speedY *= -1
+      }
+      this.$element.css({ left: `${this.x}%`, top: `${this.y}%` })
+    }
+  }
+
+  const dots = Array.from({ length: numberOfDots }, (_, i) => {
+    const $dot = $(`<div style="
+      position: absolute;
+      width: ${dotSize}px;
+      height: ${dotSize}px;
+      background-color: black;
+      border-radius: 50%;
+    "></div>`)
+    $main.append($dot)
+    const speedDirection = Math.random() * 360
+    return new Dot(Math.random() * 100, Math.random() * 100, Math.cos(speedDirection) * dotSpeed / 100, Math.sin(speedDirection) * dotSpeed / 100, $dot)
+  })
+  for (let dot of dots) {
+    setInterval(() => dot.move(), 1000 / dotSpeed)
+  }
 }
 
 const openImage = (event, config) => {
@@ -240,7 +302,10 @@ const runText = (event, config) => {
         delay = parseInt(text.match(NUMBER_REGEX)[1])
         text = text.replace(NUMBER_REGEX, '')
       }
-      $text[0].innerHTML = text + subtext(event, config)
+      $text.css({ fontFamily: event['text font'] || 'Arial' })
+      $subtext.css({ fontFamily: event['subtext font'] || 'Arial' })
+      $text[0].innerHTML = text
+      $subtext[0].innerHTML = event['subtext']
       setTimeout(next, delay * 1000)
     } else {
       $text[0].innerHTML = ''
@@ -251,10 +316,12 @@ const runText = (event, config) => {
   setTimeout(() => next(), event['text delay (sec)'] * 1000)
 }
 
-const subtext = (event, config) => {
-  return `<p class='subtext' style="font-size: ${config['subtext size (px)'] || 15}px">
-    ${event['subtext']}
-</p>`
+const importGoogleFont = fontName => {
+    const formattedFontName = fontName.replace(/\s+/g, '+');
+    const importRule = `@import url('https://fonts.googleapis.com/css2?family=${formattedFontName}&display=swap');`;
+    const $styleTag = $('<style>').text(importRule);
+    $('head').append($styleTag);
+    $('body').css('font-family', `'${fontName}', sans-serif`);
 }
 
 $(document).ready(init)
