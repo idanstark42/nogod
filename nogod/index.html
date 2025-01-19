@@ -99,12 +99,13 @@ const initEvents = (events, config) => {
         }
         fetch(`${BASE_URL}?action=get&filetype=image&filename=${imageFile}`).then(res => res.text()).then(data => {
           event.images[index] = data
-          event.$image.css({
-            backgroundImage: `url(${data})`,
-            backgroundSize: `${event['image width (px)'] / event['icon width (px)'] * 100}% ${event['image height (px)'] / event['icon height (px)'] * 100}%`,
-            backgroundPosition: `left ${event['icon center x (%)'] - event['icon width (px)'] / event['image width (px)'] * 50}% top ${event['icon center y (%)'] - event['icon height (px)'] / event['image height (px)'] * 50}%`,
-          })
-
+          if (index === 0) {
+            event.$image.css({
+              backgroundImage: `url(${data})`,
+              backgroundSize: `${event['image width (px)'] / event['icon width (px)'] * 100}% ${event['image height (px)'] / event['icon height (px)'] * 100}%`,
+              backgroundPosition: `left ${event['icon center x (%)'] - event['icon width (px)'] / event['image width (px)'] * 50}% top ${event['icon center y (%)'] - event['icon height (px)'] / event['image height (px)'] * 50}%`,
+            })
+          }
           addToLoader()
         })
       })
@@ -295,7 +296,6 @@ const startAudio = (event, config) => {
 
 const runText = (event, config) => {
   const texts = event['text (split by newline)'].split('\n')
-  console.log(texts)
   $subtext.css({ fontFamily: event['subtext font'] || 'Arial' })
   $subtext[0].innerHTML = event['subtext']
   let currentText = 0
@@ -309,7 +309,6 @@ const runText = (event, config) => {
       }
       $text.css({ fontFamily: event['text font'] || 'Arial' })
       $text[0].innerHTML = text
-      console.log(text, delay)
       setTimeout(next, delay * 1000)
     } else {
       $text[0].innerHTML = ''
