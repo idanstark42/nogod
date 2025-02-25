@@ -235,6 +235,9 @@ const openImage = (event, config) => {
 const startCarousel = (event, config) => {
   let currentImage = 0
   const imageFiles = event['image files'].split('\n').filter(imageFile => imageFile.length > 0)
+  if (imageFiles.length === 0) {
+    return
+  }
   const next = () => {
     if (currentImage >= event.images.length) {
       currentImage = 0
