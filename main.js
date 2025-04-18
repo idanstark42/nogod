@@ -1,5 +1,6 @@
+
 const Main = (module => {
-  let $mainContainer, $main, $text, $subtext, $content, version
+  let $mainContainer, $main, $text, $subtext, $content, version, player
 
   module.init = async () => {
     initVariables()
@@ -11,6 +12,14 @@ const Main = (module => {
     }
 
     $('#loader').fadeOut(500, () => $('#content').fadeIn(500))
+    
+    $('body').on('keypress', e => {
+      // if pressing space, toggle play/pause
+      console.log('key pressed', e.key)
+      if (e.key === ' ') {
+        player.toggle($main, $text, $subtext)
+      }
+    })
   }
 
   const initVariables = () => {
@@ -23,9 +32,16 @@ const Main = (module => {
   }
 
   const initEvents = (events, config) => {
-    $main[0].innerHTML = events.map(event => Event.html(event, config)).join('')
+    const raffle = new Raffle(events, config)
 
-    const total = events.length + events.reduce((acc, event) => acc + event['image files'].split('\n').filter(imageFile => imageFile.length > 0).length, 0)
+    events = events.map(event => Event.build(event, config))
+    $main[0].innerHTML = events.map(event => event.html()).join('')
+
+    player = new Player(raffle, events, config)
+    player.init($main)
+
+    const total = events.reduce((acc, event) => acc + event.filesCount, 0)
+
     const loader = new Loader(total, text => {
       $text[0].innerHTML = text
     }, () => {
@@ -35,7 +51,8 @@ const Main = (module => {
 
     setTimeout(() => {
       events.forEach((event) => {
-        Event.loadFiles(event, config, loader, $main, $text, $subtext)
+        event.loadFiles(loader, $main)
+        event.attachEvents($main, $text, $subtext)
       })
     })
 

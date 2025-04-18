@@ -1,190 +1,330 @@
-const Event = (module => {
-  module.html = (event, config) => {
-    const dotHeight = event['dot height (px)'] / config['map height (px)'] * 100
-    const aspectRatio = event['dot width (px)'] / event['dot height (px)']
+class Event {
+  constructor (raw, config) {
+    Object.assign(this, raw)
+    this.config = config
+
+    this.parseText()
+  }
+
+  parseText () {
+    const textLines = this['text (split by newline)']
+      .split('\n')
+      .map(textLine => textLine.trim())
+    this.textLines = textLines.map(textLine => textLine.match(NUMBER_REGEX) ? textLine.replace(NUMBER_REGEX, '') : textLine)
+    this.textTimes = textLines.map(textLine => textLine.match(NUMBER_REGEX) ? parseFloat(textLine.match(NUMBER_REGEX)[1]) : (this.config['text time (sec)'] || 5))
+    this.totalTime = this.textTimes.reduce((acc, time) => acc + time, 0)
+  }
+
+  html () {
+    const dotHeight = this['dot height (px)'] / this.config['map height (px)'] * 100
+    const aspectRatio = this['dot width (px)'] / this['dot height (px)']
     const dotWidth = dotHeight * aspectRatio
 
     return `
       <div referrerPolicy="no-referrer" style="
         position: absolute;
-        left: calc(${event['dot position x (%)']}% - ${dotWidth / 2}px);
-        top: calc(${event['dot position y (%)']}% - ${dotHeight / 2}px);
+        left: calc(${this['dot position x (%)']}% - ${dotWidth / 2}px);
+        top: calc(${this['dot position y (%)']}% - ${dotHeight / 2}px);
         height: ${dotHeight}%; aspect-ratio: ${aspectRatio};
 
         transition-property: background-position, background-size, top, left, aspect-ratio, height, border-radius, opacity;
         transition-timing-function: linear;
-        transition-duration: ${config['animation fade duration (sec)'] || 1}s;
-        transition-delay: ${config['animation delay (sec)'] || 0}s;
+        transition-duration: ${this.config['animation fade duration (sec)'] || 1}s;
+        transition-delay: ${this.config['animation delay (sec)'] || 0}s;
         
-        border-radius: ${config['icons rounding (%)'] / 2}%;
+        border-radius: ${this.config['icons rounding (%)'] / 2}%;
         background-repeat: no-repeat;
         background-color: black;
+        overflow: hidden;
         "
-        title="${event['text story']}">
+        title="${this['text story']}">
       </div>
     `
   }
 
-  module.loadFiles = (event, config, loader, $main, $text, $subtext) => {
-    event.$image = $main.find(`div[title="${event['text story']}"]`)
-    event.images = []
+  get filesCount () {
+    return 1
+  }
 
-    event['image files'].split('\n').filter(imageFile => imageFile.length > 0).forEach((imageFile, index) => {
-      // if image file contains time, then it will be the delay before the next image
-      if (imageFile.match(NUMBER_REGEX)) {
-        imageFile = imageFile.replace(NUMBER_REGEX, '')
-      }
-      Backend.loadFile(imageFile, 'image').then(data => {
-        event.images[index] = data
-        if (index === 0) {
-          event.$image.css({
-            backgroundImage: `url(${data})`,
-            backgroundSize: `${event['image width (px)'] / event['icon width (px)'] * 100}% ${event['image height (px)'] / event['icon height (px)'] * 100}%`,
-            backgroundPosition: `left ${event['icon center x (%)'] - event['icon width (px)'] / event['image width (px)'] * 50}% top ${event['icon center y (%)'] - event['icon height (px)'] / event['image height (px)'] * 50}%`,
-          })
-        }
-        loader.next()
-      })
-    })
+  loadFiles (loader, $main) {
+    this.$element = $main.find(`div[title="${this['text story']}"]`)
 
-    Backend.loadFile(event['audio file'], 'audio').then(data => {
-      event['sound'] = data
+    Backend.loadFile(this['audio file'], 'audio').then(data => {
+      this['sound'] = data
       loader.next()
-    })
-
-    event.$image.on('click', e => {
-      // select correct event using the target
-      openImage(event, config, $main)
-      setTimeout(() => {
-        startAudio(event, config)
-        runText(event, config, $main, $text, $subtext)
-      }, (config['animation fade duration (sec)'] + config['animation move duration (sec)'] + config['animation open duration (sec)']) * 1000)
     })
   }
 
-  const openImage = (event, config, $main) => {
-    $main.children().filter((i, el) => el !== event.$image[0]).css({ opacity: 0 })
-    setTimeout(() => {
-      // move the image to the correct position
-      const dotHeight = event['dot height (px)'] / config['map height (px)'] * 100, aspectRatio = event['dot width (px)'] / event['dot height (px)'], dotWidth = dotHeight * aspectRatio
-      event.$image.css({ transitionDuration: `${config['animation move duration (sec)']}s` })
-      event.$image.css({ left: `calc(${event['icon center x (%)']}% - ${dotHeight / 2}px)`, top: `calc(${event['icon center y (%)']}% - ${dotWidth / 2}px)` })
+  attachEvents ($main, $text, $subtext) {
+    this.$element.on('click', e => {
+      this.start($main, $text, $subtext)
+    })
+  }
 
-      setTimeout(() => {
-        // open the image
+  start ($main, $text, $subtext) {
+    this.open($main)
+    setTimeout(() => {
+      this.startAudio()
+      this.runText($main, $text, $subtext)
+    }, (this.config['animation fade duration (sec)'] + this.config['animation move duration (sec)'] + this.config['animation open duration (sec)']) * 1000)
+  }
+
+  stop ($main, $text, $subtext) {
+    this.close($main)
+    this.endAudio()
+    this.textIterationManager.stop = true
+    this.textIterationManager = null
+    $text[0].innerHTML = ''
+    $subtext[0].innerHTML = ''
+    $subtext.css({ opacity: 0 })
+  }
+
+  open ($main) {
+    console.log('hiding other points')
+    $main.children().filter((i, el) => el !== this.$element[0]).css({ opacity: 0 })
+
+    execute([
+      [() => {
+        // move the element to the correct position
+        console.log('moving to the correct position')
+        const dotHeight = this['dot height (px)'] / this.config['map height (px)'] * 100, aspectRatio = this['dot width (px)'] / this['dot height (px)'], dotWidth = dotHeight * aspectRatio
+        this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
+        this.$element.css({ left: `calc(${this['icon center x (%)']}% - ${dotHeight / 2}px)`, top: `calc(${this['icon center y (%)']}% - ${dotWidth / 2}px)` })
+      }, this.config['animation fade duration (sec)'] * 1000], [() => {
+        console.log('opening the image')
         const mainWidth = $main.width(), mainHeight = $main.height()
-        event.$image.css({ transitionDuration: `${config['animation open duration (sec)']}s` })
-        event.$image.css({
+        this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
+        this.$element.css({
           top: 0, left: 0,
           height: '100%', aspectRatio: String(mainWidth / mainHeight),
           backgroundPosition: 'center',
           backgroundSize: '100% 100%',
           borderRadius: 0
         })
-
-        setTimeout(() => {
-          startCarousel(event, config)
-        }, config['animation open duration (sec)'] * 1000)
-      }, config['animation move duration (sec)'] * 1000)
-    }, config['animation fade duration (sec)'] * 1000)
+      }, this.config['animation move duration (sec)'] * 1000], [() => {
+        this.run()
+      }, this.config['animation open duration (sec)'] * 1000]
+    ])
   }
 
-  const startCarousel = (event, config) => {
-    let currentImage = 0
-    const imageFiles = event['image files'].split('\n').filter(imageFile => imageFile.length > 0)
-    if (imageFiles.length === 0) {
-      return
-    }
-    const next = () => {
-      if (currentImage >= event.images.length) {
-        currentImage = 0
-      }
-      let delay = config['image time (sec)'] || 5
-      if (imageFiles[currentImage].match(NUMBER_REGEX)) {
-        delay = parseFloat(imageFiles[currentImage].match(NUMBER_REGEX)[1])
-      }
-      event.$image.css({ backgroundImage: `url(${event.images[currentImage++]})` })
-      event.carouslTimeout = setTimeout(next, delay * 1000)
-    }
-
-    const firstImageTime = imageFiles[0].match(NUMBER_REGEX) ? parseFloat(imageFiles[0].match(NUMBER_REGEX)[1]) : (config['image time (sec)'] || 5)
-    event.carouslTimeout = setTimeout(() => next(), firstImageTime * 1000)
-  }
-
-  const closeImage = (event, config, $main) => {
-    const mapHeight = config['map height (px)']
-    const dotPosX = event['dot position x (%)'], dotPosY = event['dot position y (%)']
-    const iconCenterX = event['icon center x (px)'], iconCenterY = event['icon center y (px)'], iconWidth = event['icon width (px)'], iconHeight = event['icon height (px)'],
-      dotHeight = event['dot height (px)'] / mapHeight * 100, aspectRatio = event['dot width (px)'] / event['dot height (px)'], dotWidth = dotHeight * aspectRatio,
-      imageWidth = event['image width (px)'], imageHeight = event['image height (px)']
+  close ($main) {
+    const mapHeight = this.config['map height (px)']
+    const dotPosX = this['dot position x (%)'], dotPosY = this['dot position y (%)']
+    const dotHeight = this['dot height (px)'] / mapHeight * 100, aspectRatio = this['dot width (px)'] / this['dot height (px)'], dotWidth = dotHeight * aspectRatio
 
     // going back to the original size
-    event.$image.css({ transitionDuration: `${config['animation open duration (sec)']}s` })
-    event.$image.css({
-      left: `calc(${event['icon center x (%)']}% - ${dotHeight / 2}px)`, top: `calc(${event['icon center y (%)']}% - ${dotWidth / 2}px)`,
-      backgroundSize: `${event['image width (px)'] / event['icon width (px)'] * 100}% ${event['image height (px)'] / event['icon height (px)'] * 100}%`,
-      backgroundPosition: `left ${event['icon center x (%)'] - event['icon width (px)'] / event['image width (px)'] * 50}% top ${event['icon center y (%)'] - event['icon height (px)'] / event['image height (px)'] * 50}%`,
+    this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
+    this.$element.css({
+      left: `calc(${this['icon center x (%)']}% - ${dotHeight / 2}px)`, top: `calc(${this['icon center y (%)']}% - ${dotWidth / 2}px)`,
+      backgroundSize: `${this['image width (px)'] / this['icon width (px)'] * 100}% ${this['image height (px)'] / this['icon height (px)'] * 100}%`,
+      backgroundPosition: `left ${this['icon center x (%)'] - this['icon width (px)'] / this['image width (px)'] * 50}% top ${this['icon center y (%)'] - this['icon height (px)'] / this['image height (px)'] * 50}%`,
       aspectRatio: String(aspectRatio), height: `${dotHeight}%`,
-      borderRadius: config['icons rounding (%)'] / 2
+      borderRadius: this.config['icons rounding (%)'] / 2
     })
 
-    clearTimeout(event.carouslTimeout)
+    this.endAudio()
 
-    setTimeout(() => {
-      // moving the image back to the original position
-      event.$image.css({ transitionDuration: `${config['animation move duration (sec)']}s` })
-      event.$image.css({
-        left: `calc(${dotPosX}% - ${dotWidth / 2}px)`,
-        top: `calc(${dotPosY}% - ${dotHeight / 2}px)`,
-      })
-    
-      setTimeout(() => {
+    execute([
+      [() => {
+        // moving the image back to the original position
+        this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
+        this.$element.css({
+          left: `calc(${dotPosX}% - ${dotWidth / 2}px)`,
+          top: `calc(${dotPosY}% - ${dotHeight / 2}px)`,
+        })
+      }, this.config['animation open duration (sec)'] * 1000], [() => {
         // revealing the other points
-        event.$image.css({ transitionDuration: `${config['animation fade duration (sec)']}s` })
+        this.$element.css({ transitionDuration: `${this.config['animation fade duration (sec)']}s` })
         $main.children().css({ opacity: 1 })
-      }, config['animation move duration (sec)'] * 1000)
-    }, config['animation open duration (sec)'] * 1000)
+      }, this.config['animation move duration (sec)'] * 1000],
+      [() => {
+        if (this.onClose) {
+          this.onClose()
+        }
+      }, this.config['animation fade duration (sec)'] * 1000]
+    ])
   }
 
-  const startAudio = (event, config) => {
+  startAudio () {
+    this.audio = new Audio(this['sound'])
+    this.audio.volume = (this.config['audio volume (%)'] || 100) / 100
+
     setTimeout(() =>{
-      const audio = new Audio(event['sound'])
-      audio.volume = (config['audio volume (%)'] || 100) / 100
-      audio.play()
+      this.audio.play()
     })
   }
 
-  const runText = (event, config, $main, $text, $subtext) => {
-    const texts = event['text (split by newline)'].split('\n')
-    $subtext.css({ fontFamily: event['subtext font'] || 'Arial' })
-    $subtext[0].innerHTML = event['subtext']
-    let currentText = 0
-    const next = () => {
-      if (currentText < texts.length) {
-        let text = texts[currentText++]
-        let delay = config['text time (sec)'] || 5
-        if (text.match(NUMBER_REGEX)) {
-          delay = parseFloat(text.match(NUMBER_REGEX)[1])
-          text = text.replace(NUMBER_REGEX, '')
-        }
-        $text.css({ fontFamily: event['text font'] || 'Arial' })
-        $text[0].innerHTML = text
-        setTimeout(next, delay * 1000)
-      } else {
-        $text[0].innerHTML = ''
-        closeImage(event, config, $main)
-      }
+  endAudio () {
+    this.audio.pause()
+    this.audio.currentTime = 0
+  }
+
+  runText ($main, $text, $subtext) {
+    $subtext.css({ fontFamily: this['subtext font'] || 'Arial' })
+    $subtext[0].innerHTML = this['subtext']
+
+    this.textIterationManager = iterate(this.textLines, textLine => {
+      $text.css({ fontFamily: this['text font'] || 'Arial' })
+      $text[0].innerHTML = textLine
+    }, this.textTimes)
+
+    this.textIterationManager.onDone = () => {
+      $text[0].innerHTML = ''
+      this.close($main)
     }
 
-    setTimeout(() => next(), event['text delay (sec)'] * 1000)
-    setTimeout(() => {
-      $subtext.css({ opacity: 1 })
-      setTimeout(() => {
-        $subtext.css({ opacity: 0 })
-      }, config['subtext duration (sec)'] * 1000)
-    }, config['subtext delay (sec)'] * 1000)
+    execute([
+      [() => $subtext.css({ opacity: 1 }), this.config['subtext delay (sec)']],
+      [() => $subtext.css({ opacity: 0 }), this.config['subtext duration (sec)']]
+    ])
   }
 
-  return module
+  static build (raw, config) {
+    return FACTORY[raw.displayType](raw, config)
+  }
+}
 
-})({})
+const FACTORY = {
+  private: (raw, config) => new ImagesEvent(raw, config, raw['image files'] || ''),
+  'raffle image': (raw, config) => new ImagesEvent(raw, config, raw.file),
+  'raffle video': (raw, config) => new VideoEvent(raw, config),
+}
+
+class ImagesEvent extends Event {
+  constructor (raw, config, images) {
+    super(raw, config)
+    this.parseImages(images)
+  }
+
+  parseImages (images) {
+    const imageLines = images
+      .split('\n')
+      .filter(imageFile => imageFile.length > 0)
+      .map(imageFile => imageFile.trim()) 
+    this.imageFiles = imageLines.map(imageLine => imageLine.match(NUMBER_REGEX) ? imageLine.replace(NUMBER_REGEX, '') : imageLine)
+    this.imageTimes = imageLines.map(imageLine => imageLine.match(NUMBER_REGEX) ? parseFloat(imageLine.match(NUMBER_REGEX)[1]) : (this.config['text time (sec)'] || 5))
+  }
+
+  get filesCount () {
+    return this.imageFiles.length + 1
+  }
+
+  loadFiles (loader, $main) {
+    super.loadFiles(loader, $main)
+    this.images = []
+
+    this.imageFiles.forEach((imageFile, index) => {
+      Backend.loadFile(imageFile, 'image').then(data => {
+        this.images[index] = data
+        if (index === 0) {
+          this.$element.css({
+            backgroundImage: `url(${data})`,
+            backgroundSize: `${this['image width (px)'] / this['icon width (px)'] * 100}% ${this['image height (px)'] / this['icon height (px)'] * 100}%`,
+            backgroundPosition: `left ${this['icon center x (%)'] - this['icon width (px)'] / this['image width (px)'] * 50}% top ${this['icon center y (%)'] - this['icon height (px)'] / this['image height (px)'] * 50}%`,
+          })
+        }
+        loader.next()
+      })
+    })
+  }
+
+  close ($main) {
+    if (this.carouselTimeoutHolder) {
+      clearTimeout(this.carouselTimeoutHolder.timeout)
+      this.carouselTimeoutHolder = null
+    }
+    super.close($main)
+  }
+
+  run () {
+    if (this.imageFiles.length === 0) {
+      return
+    }
+
+    this.carouselTimeoutHolder = iterate(this.images, image => {
+      this.$element.css({ backgroundImage: `url(${image})` })
+    }, this.imageTimes, true)
+  }
+}
+
+class VideoEvent extends Event {
+  constructor (raw, config) {
+    super(raw, config)
+    this.parseVideo()
+  }
+
+  parseVideo () {
+    this.videoFile = this.file
+  }
+
+  get filesCount () {
+    return super.filesCount + 1
+  }
+
+  loadFiles (loader, $main) {
+    super.loadFiles(loader, $main)
+    Backend.loadFile(this.videoFile, 'video').then(data => {
+      this.$element[0].innerHTML = `
+        <video muted playsinline style="
+          width: 100%; height: 100%;
+          top: 0; left: 0;
+          position: absolute;
+          background-color: black;
+          border-radius: 0;
+        ">
+          <source src="${data}" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
+      `
+      setTimeout(() => {
+        this.$element.children('video')[0].addEventListener('loadedmetadata', () => {
+          this.originalVideoDuration = this.$element.children('video')[0].duration
+          this.speed = this.originalVideoDuration / this.totalTime
+          this.$element.children('video')[0].playbackRate = this.speed
+        })
+      })
+      loader.next()
+    })
+  }
+
+  run () {
+    if (this.videoFile.length === 0) {
+      return
+    }
+
+    this.$element.children('video')[0].play()
+  }
+}
+
+const iterate = (arr, func, times, repeat=false, index=0, iterationManager={ stop: false }) => {
+  if (iterationManager.stop) {
+    return
+  }
+  
+  if (index >= arr.length) {
+    if (repeat) {
+      index = 0
+    } else {
+      if (iterationManager.onDone) {
+        iterationManager.onDone()
+      }
+      return
+    }
+  }
+
+  func(arr[index])
+  iterationManager.timeout = setTimeout(() => iterate(arr, func, times, repeat, index + 1, iterationManager), times[index] * 1000)
+  return iterationManager
+}
+
+const execute = (actions) => {
+  const doblet = actions.shift()
+  if (!doblet) {
+    return
+  }
+  const [action, time] = doblet
+  setTimeout(() => {
+    action()
+    execute(actions)
+  }, time)
+}
