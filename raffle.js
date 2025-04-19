@@ -7,7 +7,7 @@ class Raffle {
   init (events) {
     console.debug('[raffle] init')
     this.files = this.config['raffle files' || ''].split('\n').filter(file => file.length > 0).map(file => file.trim())
-    const possibleVideoEvents = events.filter(event => event['can get video'])
+    const possibleVideoEvents = events.filter(event => event['raffle'])
     if (possibleVideoEvents.length > this.files.length) {
       throw new Error('Not enough files')
     }
