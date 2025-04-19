@@ -4,6 +4,7 @@ class Event {
     this.config = config
 
     this.parseText()
+    console.debug(`[event] created ${this['text number']} (${this.constructor.name})`)
   }
 
   parseText () {
@@ -34,7 +35,7 @@ class Event {
         
         border-radius: ${this.config['icons rounding (%)'] / 2}%;
         background-repeat: no-repeat;
-        background-color: black;
+        background-color: ${this['dot color']};
         overflow: hidden;
         "
         title="${this['text story']}">
@@ -56,12 +57,11 @@ class Event {
   }
 
   attachEvents ($main, $text, $subtext) {
-    this.$element.on('click', e => {
-      this.start($main, $text, $subtext)
-    })
+    this.$element.on('click', () => this.start($main, $text, $subtext))
   }
 
   start ($main, $text, $subtext) {
+    console.debug(`[event] starting ${this['text number']} (${this.constructor.name})`)
     this.open($main)
     setTimeout(() => {
       this.startAudio()
@@ -70,6 +70,7 @@ class Event {
   }
 
   stop ($main, $text, $subtext) {
+    console.debug(`[event] stopping ${this['text number']} (${this.constructor.name})`)
     this.close($main)
     this.endAudio()
     this.textIterationManager.stop = true
@@ -80,18 +81,18 @@ class Event {
   }
 
   open ($main) {
-    console.log('hiding other points')
+    console.debug('[event] hiding other points')
     $main.children().filter((i, el) => el !== this.$element[0]).css({ opacity: 0 })
 
     execute([
       [() => {
         // move the element to the correct position
-        console.log('moving to the correct position')
+        console.debug('[event] moving to the correct position')
         const dotHeight = this['dot height (px)'] / this.config['map height (px)'] * 100, aspectRatio = this['dot width (px)'] / this['dot height (px)'], dotWidth = dotHeight * aspectRatio
         this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
         this.$element.css({ left: `calc(${this['icon center x (%)']}% - ${dotHeight / 2}px)`, top: `calc(${this['icon center y (%)']}% - ${dotWidth / 2}px)` })
       }, this.config['animation fade duration (sec)'] * 1000], [() => {
-        console.log('opening the image')
+        console.debug('[event] opening the image')
         const mainWidth = $main.width(), mainHeight = $main.height()
         this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
         this.$element.css({
@@ -108,6 +109,7 @@ class Event {
   }
 
   close ($main) {
+    console.debug('[event] closing the image')
     const mapHeight = this.config['map height (px)']
     const dotPosX = this['dot position x (%)'], dotPosY = this['dot position y (%)']
     const dotHeight = this['dot height (px)'] / mapHeight * 100, aspectRatio = this['dot width (px)'] / this['dot height (px)'], dotWidth = dotHeight * aspectRatio
@@ -126,19 +128,19 @@ class Event {
 
     execute([
       [() => {
-        // moving the image back to the original position
+        console.debug('[event] moving back to the original position')
         this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
         this.$element.css({
           left: `calc(${dotPosX}% - ${dotWidth / 2}px)`,
           top: `calc(${dotPosY}% - ${dotHeight / 2}px)`,
         })
       }, this.config['animation open duration (sec)'] * 1000], [() => {
-        // revealing the other points
+        console.debug('[event] revealing other points')
         this.$element.css({ transitionDuration: `${this.config['animation fade duration (sec)']}s` })
         $main.children().css({ opacity: 1 })
       }, this.config['animation move duration (sec)'] * 1000],
       [() => {
-        if (this.onClose) {
+        if (this.hasOwnProperty('onClose') && typeof this.onClose === 'function') {
           this.onClose()
         }
       }, this.config['animation fade duration (sec)'] * 1000]
@@ -146,27 +148,31 @@ class Event {
   }
 
   startAudio () {
-    this.audio = new Audio(this['sound'])
-    this.audio.volume = (this.config['audio volume (%)'] || 100) / 100
-
-    setTimeout(() =>{
-      this.audio.play()
+    setTimeout(() => {
+      console.debug('[event] playing audio')
+      const audio = new Audio(this.sound)
+      audio.volume = (this.config['audio volume (%)'] || 100) / 100
+      audio.play()
+      this.audio = audio
     })
   }
 
   endAudio () {
+    console.debug('[event] stopping audio')
     this.audio.pause()
     this.audio.currentTime = 0
   }
 
   runText ($main, $text, $subtext) {
+    console.debug('[event] running text')
     $subtext.css({ fontFamily: this['subtext font'] || 'Arial' })
     $subtext[0].innerHTML = this['subtext']
 
-    this.textIterationManager = iterate(this.textLines, textLine => {
+    this.textIterationManager = iterate(['', ...this.textLines], textLine => {
       $text.css({ fontFamily: this['text font'] || 'Arial' })
       $text[0].innerHTML = textLine
-    }, this.textTimes)
+      console.debug(`[event] ${textLine}`)
+    }, [this['text delay (sec)'], ...this.textTimes])
 
     this.textIterationManager.onDone = () => {
       $text[0].innerHTML = ''
@@ -174,13 +180,23 @@ class Event {
     }
 
     execute([
-      [() => $subtext.css({ opacity: 1 }), this.config['subtext delay (sec)']],
-      [() => $subtext.css({ opacity: 0 }), this.config['subtext duration (sec)']]
+      [() => {
+        console.debug('[event] revealing subtext')
+        $subtext.css({ opacity: 1 })
+      }, this.config['subtext delay (sec)'] * 1000],
+      [() => {
+        console.debug('[event] hiding subtext')
+        $subtext.css({ opacity: 0 })
+      }, this.config['subtext duration (sec)'] * 1000]
     ])
   }
 
   static build (raw, config) {
     return FACTORY[raw.displayType](raw, config)
+  }
+
+  static get ID_FIELD () {
+    return 'text number'
   }
 }
 
@@ -216,7 +232,7 @@ class ImagesEvent extends Event {
     this.imageFiles.forEach((imageFile, index) => {
       Backend.loadFile(imageFile, 'image').then(data => {
         this.images[index] = data
-        if (index === 0) {
+        if (index === 0 && this['dot color'].trim() === '') {
           this.$element.css({
             backgroundImage: `url(${data})`,
             backgroundSize: `${this['image width (px)'] / this['icon width (px)'] * 100}% ${this['image height (px)'] / this['icon height (px)'] * 100}%`,
@@ -230,6 +246,7 @@ class ImagesEvent extends Event {
 
   close ($main) {
     if (this.carouselTimeoutHolder) {
+      console.debug('[event] stopping image carousel')
       clearTimeout(this.carouselTimeoutHolder.timeout)
       this.carouselTimeoutHolder = null
     }
@@ -241,6 +258,7 @@ class ImagesEvent extends Event {
       return
     }
 
+    console.debug('[event] starting image carousel')
     this.carouselTimeoutHolder = iterate(this.images, image => {
       this.$element.css({ backgroundImage: `url(${image})` })
     }, this.imageTimes, true)
@@ -271,6 +289,7 @@ class VideoEvent extends Event {
           position: absolute;
           background-color: black;
           border-radius: 0;
+          ${this['dot color'].trim() !== '' ? 'display: none;' : ''}
         ">
           <source src="${data}" type="video/mp4">
           Your browser does not support the video tag.
@@ -291,8 +310,16 @@ class VideoEvent extends Event {
     if (this.videoFile.length === 0) {
       return
     }
+    this.$element.children('video').css({ display: 'block' })
+    setTimeout(() => {
+      console.debug('[event] starting video')
+      this.$element.children('video')[0].play()
+    }, this['text delay (sec)'] * 1000)
+  }
 
-    this.$element.children('video')[0].play()
+  close ($main) {
+    super.close($main)
+    this.$element.children('video').css({ display: 'none' })
   }
 }
 

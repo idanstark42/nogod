@@ -23,6 +23,7 @@ const Dots = (module => {
   }
 
   module.init = ($main, config) => {
+    console.debug('[dots] init')
     const numberOfDots = config['dots count']
     const dotSize = config['dots size']
     const dotSpeed = config['dots speed']
@@ -32,16 +33,19 @@ const Dots = (module => {
         position: absolute;
         width: ${dotSize}px;
         height: ${dotSize}px;
-        background-color: black;
+        background-color: ${config['dots color']};
         border-radius: 50%;
       "></div>`)
       $main.append($dot)
       const speedDirection = Math.random() * 360
       return new Dot(Math.random() * 100, Math.random() * 100, Math.cos(speedDirection) * dotSpeed / 100, Math.sin(speedDirection) * dotSpeed / 100, $dot)
     })
-    for (let dot of dots) {
-      setInterval(() => dot.move(), 1000 / dotSpeed)
-    }
+    console.debug('[dots] starting motion')
+    setInterval(() => {
+      for (let dot of dots) {
+        dot.move()
+      }
+    }, 1000 / dotSpeed)
   } 
 
   return module

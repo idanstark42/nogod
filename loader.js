@@ -11,11 +11,13 @@ class Loader {
     this.loaded++
     this.render()
     if (this.loaded === this.total) {
+      console.debug('[loader] done')
       this.done()
     }
   }
 
   render () {
     this.print(`Still loading... Please wait.<br/>${this.loaded}/${this.total}`)
+    console.debug(`[loader] ${this.loaded}/${this.total}`)
   }
 }

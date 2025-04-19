@@ -5,6 +5,7 @@ class Raffle {
   }
 
   init (events) {
+    console.debug('[raffle] init')
     this.files = this.config['raffle files' || ''].split('\n').filter(file => file.length > 0).map(file => file.trim())
     const possibleVideoEvents = events.filter(event => event['can get video'])
     if (possibleVideoEvents.length > this.files.length) {
@@ -12,11 +13,20 @@ class Raffle {
     }
 
     const numberOfVideos = this.randomNumberOfVideos(Math.min(possibleVideoEvents.length, this.files.length))
+    console.debug(`using ${numberOfVideos} videos`)
     const videoIndices = this.randomVideoIndices(events, numberOfVideos)
     const videoEvents = this.getVideoEvents(possibleVideoEvents, videoIndices.length)
     this.markEvents(events, videoEvents, possibleVideoEvents)
     this.assignFiles(possibleVideoEvents, videoIndices)
     this.events = this.generateEvents(events, videoEvents, videoIndices)
+    console.debug('[raffle] finished')
+    this.events.forEach(event => {
+      console.debug(`[raffle] event ${event[Event.ID_FIELD]} (${event.displayType}${event.file ? `:${event.file}` : ''})`)
+    })
+  }
+
+  enrich (events) {
+    this.events = this.events.map(raw => events.find(event => event[Event.ID_FIELD] === raw[Event.ID_FIELD]))
   }
 
   randomNumberOfVideos (minimumVideos) {
