@@ -19,6 +19,7 @@ class Raffle {
     this.markEvents(events, videoEvents, possibleVideoEvents)
     this.assignFiles(possibleVideoEvents, videoIndices)
     this.events = this.generateEvents(events, videoEvents, videoIndices)
+
     console.debug('[raffle] finished')
     this.events.forEach(event => {
       console.debug(`[raffle] event ${event[Event.ID_FIELD]} (${event.displayType}${event.file ? `:${event.file}` : ''})`)
@@ -58,7 +59,8 @@ class Raffle {
     if (videoIndices === 0) {
       return []
     }
-    return new Array(videoIndices).fill(0).map(() => sample(events, false))
+    const eventsCopy = [...events] 
+    return new Array(videoIndices).fill(0).map(() => sample(eventsCopy))
   }
 
   markEvents (events, videoEvents, possibleVideoEvents) {

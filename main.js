@@ -17,7 +17,7 @@ const Main = (module => {
       // if pressing space, toggle play/pause
       console.debug('[main] key pressed', e.key)
       if (e.key === ' ') {
-        player.toggle($main, $text, $subtext)
+        player.toggle()
       }
     })
   }
