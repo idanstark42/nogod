@@ -71,13 +71,14 @@ class Raffle {
 
   assignFiles (events, videoIndices) {
     const fileIndices = this.files.map((_, i) => i)
-    const optionalVideoIndices = videoIndices.filter(index => this.files[index].includes('.mp4') || !this.files[index].includes('.'))
+    const optionalVideoIndices = fileIndices.filter(index => this.files[index].includes('.mp4') || !this.files[index].includes('.'))
     const videoFileIndices = shuffle(new Array(videoIndices.length).fill(0).map(() => sample(optionalVideoIndices)))
     const imageFileIndices = shuffle(fileIndices.filter(index => !videoFileIndices.includes(index)))
+
     events.forEach((event, i) => {
       if (event.displayType === 'raffle video') {
         const filename = this.files[videoFileIndices.shift()]
-        event.file = filename.endsWith('.mp4') ? filename : `${filename}.mp4`
+        event.file = filename.includes('.') ? filename : `${filename}.mp4`
       } else {
         const filename = this.files[imageFileIndices.shift()]
         event.file = filename.includes('.') ? filename : `${filename}.png`
