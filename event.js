@@ -218,7 +218,7 @@ class ImagesEvent extends Event {
       .filter(imageFile => imageFile.length > 0)
       .map(imageFile => imageFile.trim()) 
     this.imageFiles = imageLines.map(imageLine => imageLine.match(NUMBER_REGEX) ? imageLine.replace(NUMBER_REGEX, '') : imageLine)
-    this.imageTimes = imageLines.map(imageLine => imageLine.match(NUMBER_REGEX) ? parseFloat(imageLine.match(NUMBER_REGEX)[1]) : (this.config['text time (sec)'] || 5))
+    this.imageTimes = imageLines.map(imageLine => imageLine.match(NUMBER_REGEX) ? parseFloat(imageLine.match(NUMBER_REGEX)[1]) : (this.config['image time (sec)'] || 5))
   }
 
   get filesCount () {

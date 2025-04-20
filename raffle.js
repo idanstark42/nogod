@@ -71,7 +71,7 @@ class Raffle {
 
   assignFiles (events, videoIndices) {
     const fileIndices = this.files.map((_, i) => i)
-    const videoFileIndices = shuffle(new Array(videoIndices).fill(0).map(() => sample(fileIndices)))
+    const videoFileIndices = shuffle(new Array(videoIndices.length).fill(0).map(() => sample(fileIndices)))
     const imageFileIndices = shuffle(fileIndices.filter(index => !videoFileIndices.includes(index)))
     events.forEach((event, i) => {
       if (event.displayType === 'raffle video') {
