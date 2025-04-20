@@ -43,10 +43,10 @@ class Raffle {
 
     this.minDistanceBetweenVideos = this.config['min distance between videos'] || 0
     const maximumShift = events.length - ((numberOfVideos - 1) * this.minDistanceBetweenVideos + 1)
-    if (maximumShift < 0) {
+    if (maximumShift < 1) {
       throw new Error('Not enough space for videos')
     }
-    let shift = 0
+    let shift = 1
     const videoIndices = new Array(numberOfVideos).fill(0).map((_, i) => i * this.minDistanceBetweenVideos)
       .map((index) => {
         shift += random(0, maximumShift - shift)
