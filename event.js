@@ -18,15 +18,18 @@ class Event {
 
   html () {
     const dotHeight = this['dot height (px)'] / this.config['map height (px)'] * 100
+    const dotWidth = this['dot width (px)'] / (this.config['map height (px)'] * this.config['map aspect ratio']) * 100
     const aspectRatio = this['dot width (px)'] / this['dot height (px)']
-    const dotWidth = dotHeight * aspectRatio
 
     return `
       <div referrerPolicy="no-referrer" style="
         position: absolute;
-        left: calc(${this['dot position x (%)']}% - ${dotWidth / 2}px);
-        top: calc(${this['dot position y (%)']}% - ${dotHeight / 2}px);
-        height: ${dotHeight}%; aspect-ratio: ${aspectRatio};
+        display: block;
+        left: round(calc(${this['dot position x (%)']}% - ${dotWidth / 2}%), 1px);
+        top: round(calc(${this['dot position y (%)']}% - ${dotHeight / 2}%), 1px);
+        height: round(${dotHeight}%, 1px);
+        width: round(${dotWidth}%, 1px);
+        aspect-ratio: ${aspectRatio};
 
         transition-property: background-position, background-size, top, left, aspect-ratio, height, border-radius, opacity;
         transition-timing-function: linear;
@@ -37,6 +40,7 @@ class Event {
         background-repeat: no-repeat;
         background-color: ${this['dot color']};
         overflow: hidden;
+        will-change: transform, opacity;
         "
         title="${this['text story']}">
       </div>
@@ -249,6 +253,9 @@ class ImagesEvent extends Event {
       console.debug('[event] stopping image carousel')
       clearTimeout(this.carouselTimeoutHolder.timeout)
       this.carouselTimeoutHolder = null
+    }
+    if (this['dot color'].trim() !== '') {
+      this.$element.css({ backgroundImage: '' })
     }
     super.close($main)
   }

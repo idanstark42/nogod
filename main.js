@@ -5,8 +5,8 @@ const Main = (module => {
   module.init = async () => {
     initVariables()
     const { events, config } = await Backend.load(version)
-    initEvents(events, config)
     initCSS(config)
+    initEvents(events, config)
     if (config['show dots']) {
       Dots.init($main, config)
     }
