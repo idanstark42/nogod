@@ -24,9 +24,10 @@ class Player {
           }
           this.currentIndex++
           if (this.currentIndex >= this.raffle.events.length) {
-            this.currentIndex = 0
+            this.end()
+          } else {
+            this.currentEvent.start(this.$main, this.$text, this.$subtext)
           }
-          this.currentEvent.start(this.$main, this.$text, this.$subtext)
         }, (this.config['time between events (sec)'] || 0) * 1000)
       }
     })
@@ -37,11 +38,7 @@ class Player {
     if (this.status === 'playing') {
       return
     }
-    
-    this.currentIndex = 0
-    this.currentEvent.start(this.$main, this.$text, this.$subtext)
-
-    this.status = 'playing'
+    this._start()
   }
 
   stop () {
@@ -49,6 +46,7 @@ class Player {
     if (this.status === 'stopped') {
       return
     }
+
     this.status = 'stopped'
     this.currentEvent.stop(this.$main, this.$text, this.$subtext)
   }
@@ -58,6 +56,64 @@ class Player {
       this.stop()
     } else {
       this.start()
+    }
+  }
+
+  end () {
+    console.debug('[player] end')
+    if (this.config['end screen file'].trim() !== '') {
+      this.showEndScreen()
+      setTimeout(() => this.restart(), this.config['end screen time (sec)'] * 1000)
+    } else {
+      this.restart()
+    }
+  }
+
+  showEndScreen () {
+    // add the end screen element to the $main element
+    $(this.$main).append('<video id="end-screen" autoplay muted loop><source src="' + this.config['end screen file'] + '" type="video/mp4"></video>')
+    // remove the end screen element after the video ends
+    $('#end-screen').on('ended', () => {
+      $('#end-screen').remove()
+    })
+    // remove the end screen element after the end screen time
+    setTimeout(() => {
+      $('#end-screen').remove()
+    }, this.config['end screen time (sec)'] * 1000)
+  }
+
+  showOpenScreen () {
+    // add the openning screen element to the $main element
+    $(this.$main).append('<video id="open-screen" autoplay muted loop><source src="' + this.config['open screen file'] + '" type="video/mp4"></video>')
+    // remove the openning screen element after the video ends
+    $('#open-screen').on('ended', () => {
+      $('#open-screen').remove()
+    })
+    // remove the openning screen element after the open screen time
+    setTimeout(() => {
+      $('#open-screen').remove()
+    }, this.config['open screen time (sec)'] * 1000)
+  }
+
+  restart () {
+    console.debug('[player] restarting')
+    this.raffle.shuffle()
+    this._start()
+  }
+
+  _start () {
+    this.currentIndex = 0
+
+    const playFirstEvent = () => {
+      this.currentEvent.start(this.$main, this.$text, this.$subtext)
+      this.status = 'playing'
+    }
+
+    if (this.config['open screen file'].trim() !== '') {      
+      showOpenScreen()
+      setTimeout(playFirstEvent, this.config['open screen time (sec)'] * 1000)
+    } else {
+      playFirstEvent()
     }
   }
 }

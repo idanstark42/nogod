@@ -93,6 +93,10 @@ class Raffle {
       return (videoIndices.includes(i) ? videoEvents : nonVideoEvents).shift()
     })
   }
+
+  shuffle () {
+    this.events = shuffle(this.events)
+  }
 }
 
 function sample (array, remove=true) {
