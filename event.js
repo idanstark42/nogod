@@ -17,17 +17,15 @@ class Event {
   }
 
   html () {
-    const dotHeight = this['dot height (px)'] / this.config['map height (px)'] * 100
-    const dotWidth = this['dot width (px)'] / (this.config['map height (px)'] * this.config['map aspect ratio']) * 100
-
+    const dot = this.dotDimensions
     return `
       <div referrerPolicy="no-referrer" style="
         position: absolute;
         display: block;
-        left: round(calc(${this['dot position x (%)']}% - ${dotWidth / 2}%), 1px);
-        top: round(calc(${this['dot position y (%)']}% - ${dotHeight / 2}%), 1px);
-        height: round(${dotHeight}%, 1px);
-        width: round(${dotWidth}%, 1px);
+        left: round(calc(${this['dot position x (%)']}% - ${dot.width / 2}%), 1px);
+        top: round(calc(${this['dot position y (%)']}% - ${dot.height / 2}%), 1px);
+        height: round(${dot.height}%, 1px);
+        width: round(${dot.width}%, 1px);
 
         transition-property: background-position, background-size, top, left, height, width, border-radius, opacity;
         transition-timing-function: linear;
@@ -47,6 +45,12 @@ class Event {
 
   get filesCount () {
     return 1
+  }
+
+  get dotDimensions () {
+    const dotHeight = this['dot height (px)'] / this.config['map height (px)'] * 100
+    const dotWidth = this['dot width (px)'] / (this.config['map height (px)'] * this.config['map aspect ratio']) * 100
+    return { width: dotWidth, height: dotHeight }
   }
 
   loadFiles (loader, $main) {
@@ -88,13 +92,12 @@ class Event {
 
     execute([
       [() => {
-        const dotHeight = this['dot height (px)'] / this.config['map height (px)'] * 100
-        const dotWidth = this['dot width (px)'] / (this.config['map height (px)'] * this.config['map aspect ratio']) * 100
+        const dot = this.dotDimensions
 
         // move the element to the correct position
         console.debug('[event] moving to the correct position')
         this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
-        this.$element.css({ left: `calc(${this['icon center x (%)']}% - ${dotHeight / 2}px)`, top: `calc(${this['icon center y (%)']}% - ${dotWidth / 2}px)` })
+        this.$element.css({ left: `calc(${this['icon center x (%)']}% - ${dot.height / 2}px)`, top: `calc(${this['icon center y (%)']}% - ${dot.width / 2}px)` })
       }, this.config['animation fade duration (sec)'] * 1000], [() => {
         console.debug('[event] opening the image')
         this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
@@ -114,16 +117,15 @@ class Event {
   close ($main) {
     console.debug('[event] closing the image')
     const dotPosX = this['dot position x (%)'], dotPosY = this['dot position y (%)']
-    const dotHeight = this['dot height (px)'] / this.config['map height (px)'] * 100
-    const dotWidth = this['dot width (px)'] / (this.config['map height (px)'] * this.config['map aspect ratio']) * 100
+    const dot = this.dotDimensions
 
     // going back to the original size
     this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
     this.$element.css({
-      left: `calc(${this['icon center x (%)']}% - ${dotHeight / 2}px)`, top: `calc(${this['icon center y (%)']}% - ${dotWidth / 2}px)`,
+      left: `calc(${this['icon center x (%)']}% - ${dot.height / 2}px)`, top: `calc(${this['icon center y (%)']}% - ${dot.width / 2}px)`,
       backgroundSize: `${this['image width (px)'] / this['icon width (px)'] * 100}% ${this['image height (px)'] / this['icon height (px)'] * 100}%`,
       backgroundPosition: `left ${this['icon center x (%)'] - this['icon width (px)'] / this['image width (px)'] * 50}% top ${this['icon center y (%)'] - this['icon height (px)'] / this['image height (px)'] * 50}%`,
-      height: `${dotHeight}%`, width: `${dotWidth}%`,
+      height: `${dot.height}%`, width: `${dot.width}%`,
       borderRadius: this.config['icons rounding (%)'] / 2
     })
 
@@ -134,8 +136,8 @@ class Event {
         console.debug('[event] moving back to the original position')
         this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
         this.$element.css({
-          left: `calc(${dotPosX}% - ${dotWidth / 2}px)`,
-          top: `calc(${dotPosY}% - ${dotHeight / 2}px)`,
+          left: `calc(${dotPosX}% - ${dot.width / 2}px)`,
+          top: `calc(${dotPosY}% - ${dot.height / 2}px)`,
         })
       }, this.config['animation open duration (sec)'] * 1000], [() => {
         console.debug('[event] revealing other points')
