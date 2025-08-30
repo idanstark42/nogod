@@ -62,14 +62,14 @@ const Main = (module => {
       })
 
       if (config['start screen file'].trim() !== '') {
-        Backend.loadFile(this['start screen file'].trim(), 'video').then(file => {
+        Backend.loadFile(config['start screen file'].trim()).then(file => {
           player.startScreenFile = file
           loader.next()
         })
       }
 
       if (config['end screen file'].trim() !== '') {
-        Backend.loadFile(this['end screen file'].trim(), 'video').then(file => {
+        Backend.loadFile(config['end screen file'].trim()).then(file => {
           player.endScreenFile = file
           loader.next()
         })

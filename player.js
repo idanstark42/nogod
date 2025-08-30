@@ -68,23 +68,43 @@ class Player {
     }
   }
 
-  showOpenScreen () {
-    // add the openning screen element to the $main element
-    $(this.$main).append('<video id="open-screen" autoplay muted><source src="' + this.startScreenFile + '" type="video/mp4"></video>')
-    // remove the openning screen element after the video ends
-    $('#open-screen').on('ended', () => {
-      $('#open-screen').remove()
-      this._playFirstEvent()
+  async showOpenScreen () {
+    switch (Backend.getFiletype(this.config['open screen file'])) {
+      case 'video': await this._showVideo(this.startScreenFile); break;
+      case 'image': await this._showImage(this.startScreenFile, this.config['open screen file duration']); break;
+    }
+
+    this._playFirstEvent()
+  }
+
+  async showEndScreen () {
+    switch (Backend.getFiletype(this.config['open screen file'])) {
+      case 'video': await this._showVideo(this.startScreenFile); break;
+      case 'image': await this._showImage(this.startScreenFile, this.config['open screen file duration']); break;
+    }
+    
+    this.restart()
+  }
+
+  _showVideo (source) {
+    $(this.$main).append(`<video id="video-screen" autoplay muted><source src="${source}" type="video/mp4"></video>`)
+    return new Promise(resolve => {
+      setTimeout(() => {
+        $('#video-screen').on('ended', () => {
+          $('#video-screen').remove()
+          resolve()
+        })
+      }, 100)
     })
   }
 
-  showEndScreen () {
-    // add the end screen element to the $main element
-    $(this.$main).append('<video id="end-screen" autoplay muted><source src="' + this.endScreenFile + '" type="video/mp4"></video>')
-    // remove the end screen element after the video ends
-    $('#end-screen').on('ended', () => {
-      $('#end-screen').remove()
-      this.restart()
+  _showImage (source, duration) {
+    $(this.$main).append(`<div id="image-screen" style="background-image: url(${source})"></div>`)
+    return new Promise(resolve => {
+      setTimeout(() => {
+        $('#image-screen').remove()
+        resolve()
+      }, duration * 1000)
     })
   }
 
