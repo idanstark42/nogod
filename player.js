@@ -61,38 +61,31 @@ class Player {
 
   end () {
     console.debug('[player] end')
-    if (this.config['end screen file'].trim() !== '') {
+    if (this.endScreenFile) {
       this.showEndScreen()
-      setTimeout(() => this.restart(), this.config['end screen time (sec)'] * 1000)
     } else {
       this.restart()
     }
   }
 
-  showEndScreen () {
-    // add the end screen element to the $main element
-    $(this.$main).append('<video id="end-screen" autoplay muted loop><source src="' + this.config['end screen file'] + '" type="video/mp4"></video>')
-    // remove the end screen element after the video ends
-    $('#end-screen').on('ended', () => {
-      $('#end-screen').remove()
-    })
-    // remove the end screen element after the end screen time
-    setTimeout(() => {
-      $('#end-screen').remove()
-    }, this.config['end screen time (sec)'] * 1000)
-  }
-
   showOpenScreen () {
     // add the openning screen element to the $main element
-    $(this.$main).append('<video id="open-screen" autoplay muted loop><source src="' + this.config['open screen file'] + '" type="video/mp4"></video>')
+    $(this.$main).append('<video id="open-screen" autoplay muted><source src="' + this.startScreenFile + '" type="video/mp4"></video>')
     // remove the openning screen element after the video ends
     $('#open-screen').on('ended', () => {
       $('#open-screen').remove()
+      this._playFirstEvent()
     })
-    // remove the openning screen element after the open screen time
-    setTimeout(() => {
-      $('#open-screen').remove()
-    }, this.config['open screen time (sec)'] * 1000)
+  }
+
+  showEndScreen () {
+    // add the end screen element to the $main element
+    $(this.$main).append('<video id="end-screen" autoplay muted><source src="' + this.endScreenFile + '" type="video/mp4"></video>')
+    // remove the end screen element after the video ends
+    $('#end-screen').on('ended', () => {
+      $('#end-screen').remove()
+      this.restart()
+    })
   }
 
   restart () {
@@ -104,16 +97,15 @@ class Player {
   _start () {
     this.currentIndex = 0
 
-    const playFirstEvent = () => {
-      this.currentEvent.start(this.$main, this.$text, this.$subtext)
-      this.status = 'playing'
-    }
-
-    if (this.config['open screen file'].trim() !== '') {      
+    if (this.startScreenFile) {      
       showOpenScreen()
-      setTimeout(playFirstEvent, this.config['open screen time (sec)'] * 1000)
     } else {
-      playFirstEvent()
+      this._playFirstEvent()
     }
+  }
+
+  _playFirstEvent () {
+    this.currentEvent.start(this.$main, this.$text, this.$subtext)
+    this.status = 'playing'
   }
 }

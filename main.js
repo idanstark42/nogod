@@ -44,6 +44,8 @@ const Main = (module => {
     player.init($main)
 
     const total = events.reduce((acc, event) => acc + event.filesCount, 0)
+      + (config['open screen file'] ? 1 : 0)
+      + (config['end screen file'] ? 1 : 0)
 
     const loader = new Loader(total, text => {
       $text[0].innerHTML = text
@@ -58,6 +60,20 @@ const Main = (module => {
         event.loadFiles(loader, $main)
         event.attachEvents($main, $text, $subtext)
       })
+
+      if (config['start screen file'].trim() !== '') {
+        Backend.loadFile(this['start screen file'].trim(), 'video').then(file => {
+          player.startScreenFile = file
+          loader.next()
+        })
+      }
+
+      if (config['end screen file'].trim() !== '') {
+        Backend.loadFile(this['end screen file'].trim(), 'video').then(file => {
+          player.endScreenFile = file
+          loader.next()
+        })
+      }
     })
 
     console.debug('[main] loading fonts')
