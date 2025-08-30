@@ -118,7 +118,7 @@ class Player {
     this.currentIndex = 0
 
     if (this.startScreenFile) {      
-      showOpenScreen()
+      this.showOpenScreen()
     } else {
       this._playFirstEvent()
     }
