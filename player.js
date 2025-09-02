@@ -68,44 +68,25 @@ class Player {
     }
   }
 
-  async showOpenScreen () {
-    switch (Backend.getFiletype(this.config['open screen file'])) {
+  async showStartScreen () {
+    console.debug('[player] showing start screen')
+    switch (Backend.getFiletype(this.config['start screen file'])) {
       case 'video': await this._showVideo(this.startScreenFile); break;
-      case 'image': await this._showImage(this.startScreenFile, this.config['open screen file duration']); break;
+      case 'image': await this._showImage(this.startScreenFile, this.config['start screen duration']); break;
     }
 
     this._playFirstEvent()
+    // this.end()
   }
 
   async showEndScreen () {
-    switch (Backend.getFiletype(this.config['open screen file'])) {
-      case 'video': await this._showVideo(this.startScreenFile); break;
-      case 'image': await this._showImage(this.startScreenFile, this.config['open screen file duration']); break;
+    console.debug('[player] showing end screen')
+    switch (Backend.getFiletype(this.config['end screen file'])) {
+      case 'video': await this._showVideo(this.endScreenFile); break;
+      case 'image': await this._showImage(this.endScreenFile, this.config['end screen duration']); break;
     }
     
     this.restart()
-  }
-
-  _showVideo (source) {
-    $(this.$main).append(`<video id="video-screen" autoplay muted><source src="${source}" type="video/mp4"></video>`)
-    return new Promise(resolve => {
-      setTimeout(() => {
-        $('#video-screen').on('ended', () => {
-          $('#video-screen').remove()
-          resolve()
-        })
-      }, 100)
-    })
-  }
-
-  _showImage (source, duration) {
-    $(this.$main).append(`<div id="image-screen" style="background-image: url(${source})"></div>`)
-    return new Promise(resolve => {
-      setTimeout(() => {
-        $('#image-screen').remove()
-        resolve()
-      }, duration * 1000)
-    })
   }
 
   restart () {
@@ -118,7 +99,7 @@ class Player {
     this.currentIndex = 0
 
     if (this.startScreenFile) {      
-      this.showOpenScreen()
+      this.showStartScreen()
     } else {
       this._playFirstEvent()
     }
@@ -127,5 +108,30 @@ class Player {
   _playFirstEvent () {
     this.currentEvent.start(this.$main, this.$text, this.$subtext)
     this.status = 'playing'
+  }
+
+  _showVideo (source) {
+    console.debug('[player] showing video')
+    $(this.$main).append(`<video id="video-screen" autoplay muted><source src="${source}" type="video/mp4"></video>`)
+    return new Promise(resolve => {
+      setTimeout(() => {
+        $('#video-screen').on('ended', () => {
+          $('#video-screen').remove()
+          resolve()
+        })
+      }, 100)
+    })
+  }
+
+  _showImage (source, duration) {
+    console.debug(`[player] showing image for ${duration} seconds`)
+    $(this.$main).append(`<div id="image-screen" style="background-image: url(${source})"></div>`)
+    return new Promise(resolve => {
+      setTimeout(() => {
+        console.debug('[player] hiding image')
+        $('#image-screen').remove()
+        resolve()
+      }, duration * 1000)
+    })
   }
 }

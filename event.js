@@ -90,15 +90,18 @@ class Event {
     console.debug('[event] hiding other points')
     $main.children().filter((i, el) => el !== this.$element[0]).css({ opacity: 0 })
 
-    execute([
-      [() => {
-        const dot = this.dotDimensions
+    const moveToPosition = [() => {
+      const dot = this.dotDimensions
 
-        // move the element to the correct position
-        console.debug('[event] moving to the correct position')
-        this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
-        this.$element.css({ left: `calc(${this['icon center x (%)']}% - ${dot.height / 2}px)`, top: `calc(${this['icon center y (%)']}% - ${dot.width / 2}px)` })
-      }, this.config['animation fade duration (sec)'] * 1000], [() => {
+      // move the element to the correct position
+      console.debug('[event] moving to the correct position')
+      this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
+      this.$element.css({ left: `calc(${this['icon center x (%)']}% - ${dot.height / 2}px)`, top: `calc(${this['icon center y (%)']}% - ${dot.width / 2}px)` })
+    }, this.config['animation fade duration (sec)'] * 1000]
+
+    execute([
+      this.config['move points'] ? moveToPosition : null,
+      [() => {
         console.debug('[event] opening the image')
         this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
         this.$element.css({
@@ -111,7 +114,7 @@ class Event {
       }, this.config['animation move duration (sec)'] * 1000], [() => {
         this.run()
       }, this.config['animation open duration (sec)'] * 1000]
-    ])
+    ].filter(Boolean))
   }
 
   close ($main) {
@@ -131,15 +134,18 @@ class Event {
 
     this.endAudio()
 
+    const moveToPosition = [() => {
+      console.debug('[event] moving back to the original position')
+      this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
+      this.$element.css({
+        left: `calc(${dotPosX}% - ${dot.width / 2}px)`,
+        top: `calc(${dotPosY}% - ${dot.height / 2}px)`,
+      })
+    }, this.config['animation open duration (sec)'] * 1000]
+
     execute([
+      this.config['move points'] ? moveToPosition : null,
       [() => {
-        console.debug('[event] moving back to the original position')
-        this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
-        this.$element.css({
-          left: `calc(${dotPosX}% - ${dot.width / 2}px)`,
-          top: `calc(${dotPosY}% - ${dot.height / 2}px)`,
-        })
-      }, this.config['animation open duration (sec)'] * 1000], [() => {
         console.debug('[event] revealing other points')
         this.$element.css({ transitionDuration: `${this.config['animation fade duration (sec)']}s` })
         $main.children().css({ opacity: 1 })
@@ -149,7 +155,7 @@ class Event {
           this.onClose()
         }
       }, this.config['animation fade duration (sec)'] * 1000]
-    ])
+    ].filter(Boolean))
   }
 
   startAudio () {

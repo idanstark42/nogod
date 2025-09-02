@@ -44,7 +44,7 @@ const Main = (module => {
     player.init($main)
 
     const total = events.reduce((acc, event) => acc + event.filesCount, 0)
-      + (config['open screen file'] ? 1 : 0)
+      + (config['start screen file'] ? 1 : 0)
       + (config['end screen file'] ? 1 : 0)
 
     const loader = new Loader(total, text => {
