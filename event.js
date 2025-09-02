@@ -50,7 +50,26 @@ class Event {
   get dotDimensions () {
     const dotHeight = this['dot height (px)'] / this.config['map height (px)'] * 100
     const dotWidth = this['dot width (px)'] / (this.config['map height (px)'] * this.config['map aspect ratio']) * 100
-    return { width: dotWidth, height: dotHeight }
+    return { width: `round(${dotWidth}, 1px)`, height: `round(${dotHeight}, 1px)` }
+  }
+
+  get dotPosition () {
+    const dotPosX = this['dot position x (%)'], dotPosY = this['dot position y (%)']
+    const dot = this.dotDimensions
+
+    return {
+      left: `round(calc(${dotPosX}% - ${dot.width / 2}px), 1px)`,
+      top: `round(calc(${dotPosY}% - ${dot.height / 2}px), 1px)`,
+    }
+  }
+
+  get iconPosition () {
+    const dot = this.dotDimensions
+
+    return {
+      left: `round(calc(${this['icon center x (%)']}% - ${dot.height / 2}px), 1px)`,
+      top: `round(calc(${this['icon center y (%)']}% - ${dot.width / 2}px), 1px)`
+    }
   }
 
   loadFiles (loader, $main) {
@@ -91,12 +110,10 @@ class Event {
     $main.children().filter((i, el) => el !== this.$element[0]).css({ opacity: 0 })
 
     const moveToPosition = [() => {
-      const dot = this.dotDimensions
-
       // move the element to the correct position
       console.debug('[event] moving to the correct position')
       this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
-      this.$element.css({ left: `calc(${this['icon center x (%)']}% - ${dot.height / 2}px)`, top: `calc(${this['icon center y (%)']}% - ${dot.width / 2}px)` })
+      this.$element.css(this.iconPosition)
     }, this.config['animation fade duration (sec)'] * 1000]
 
     execute([
@@ -119,13 +136,11 @@ class Event {
 
   close ($main) {
     console.debug('[event] closing the image')
-    const dotPosX = this['dot position x (%)'], dotPosY = this['dot position y (%)']
-    const dot = this.dotDimensions
 
     // going back to the original size
     this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
     this.$element.css({
-      left: `calc(${this['icon center x (%)']}% - ${dot.height / 2}px)`, top: `calc(${this['icon center y (%)']}% - ${dot.width / 2}px)`,
+      ...(this.config['move points'] ? this.iconPosition : this.dotPosition),
       backgroundSize: `${this['image width (px)'] / this['icon width (px)'] * 100}% ${this['image height (px)'] / this['icon height (px)'] * 100}%`,
       backgroundPosition: `left ${this['icon center x (%)'] - this['icon width (px)'] / this['image width (px)'] * 50}% top ${this['icon center y (%)'] - this['icon height (px)'] / this['image height (px)'] * 50}%`,
       height: `${dot.height}%`, width: `${dot.width}%`,
@@ -137,10 +152,7 @@ class Event {
     const moveToPosition = [() => {
       console.debug('[event] moving back to the original position')
       this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
-      this.$element.css({
-        left: `calc(${dotPosX}% - ${dot.width / 2}px)`,
-        top: `calc(${dotPosY}% - ${dot.height / 2}px)`,
-      })
+      this.$element.css(this.dotPosition)
     }, this.config['animation open duration (sec)'] * 1000]
 
     execute([
