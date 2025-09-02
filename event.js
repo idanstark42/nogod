@@ -50,7 +50,7 @@ class Event {
   get dotDimensions () {
     const dotHeight = this['dot height (px)'] / this.config['map height (px)'] * 100
     const dotWidth = this['dot width (px)'] / (this.config['map height (px)'] * this.config['map aspect ratio']) * 100
-    return { width: `round(${dotWidth}, 1px)`, height: `round(${dotHeight}, 1px)` }
+    return { width: dotWidth, height: dotHeight }
   }
 
   get dotPosition () {
@@ -136,6 +136,7 @@ class Event {
 
   close ($main) {
     console.debug('[event] closing the image')
+    const dot = this.dotDimensions
 
     // going back to the original size
     this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })

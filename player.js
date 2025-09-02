@@ -125,11 +125,14 @@ class Player {
 
   _showImage (source, duration) {
     console.debug(`[player] showing image for ${duration} seconds`)
-    $(this.$main).append(`<div id="image-screen" style="background-image: url(${source})"></div>`)
+    $(this.$main).append(`<div id="image-screen" style="background-image: url(${source}); opacity: 1; transition: opacity ${this.config['screen fade time']}s linear"></div>`)
     return new Promise(resolve => {
       setTimeout(() => {
         console.debug('[player] hiding image')
-        $('#image-screen').remove()
+        $('#image-screen').css({ opacity: 0 })
+        setTimeout(() => {
+          $('#image-screen').remove()
+        }, this.config['screen fade time'] * 1000)
         resolve()
       }, duration * 1000)
     })
