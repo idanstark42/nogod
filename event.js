@@ -370,15 +370,3 @@ const iterate = (arr, func, times, repeat=false, index=0, iterationManager={ sto
   iterationManager.timeout = setTimeout(() => iterate(arr, func, times, repeat, index + 1, iterationManager), times[index] * 1000)
   return iterationManager
 }
-
-const execute = (actions) => {
-  const doblet = actions.shift()
-  if (!doblet) {
-    return
-  }
-  const [action, time] = doblet
-  setTimeout(() => {
-    action()
-    execute(actions)
-  }, time)
-}

@@ -75,8 +75,9 @@ class Player {
       case 'image': await this._showImage(this.startScreenFile, this.config['start screen duration']); break;
     }
 
+    await wait((this.config['time after start screen (sec)'] || 0) * 1000)
+
     this._playFirstEvent()
-    // this.end()
   }
 
   async showEndScreen () {
@@ -125,16 +126,16 @@ class Player {
 
   _showImage (source, duration) {
     console.debug(`[player] showing image for ${duration} seconds`)
-    $(this.$main).append(`<div id="image-screen" style="background-image: url(${source}); opacity: 1; transition: opacity ${this.config['screen fade time']}s linear"></div>`)
+    $(this.$main).append(`<div id="image-screen" style="background-image: url(${source}); opacity: 0; transition: opacity ${this.config['screen fade time']}s linear"></div>`)
     return new Promise(resolve => {
-      setTimeout(() => {
-        console.debug('[player] hiding image')
-        $('#image-screen').css({ opacity: 0 })
-        setTimeout(() => {
+      execute([
+        [() => $('#image-screen').css({ opacity: 1 }), 0],
+        [() => $('#image-screen').css({ opacity: 0 }), duration * 1000],
+        [() => {
           $('#image-screen').remove()
-        }, this.config['screen fade time'] * 1000)
-        resolve()
-      }, duration * 1000)
+          resolve()
+        }, this.config['screen fade time'] * 1000]
+      ])
     })
   }
 }
