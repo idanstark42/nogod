@@ -1,5 +1,6 @@
 class Raffle {
   constructor(events, config) {
+    this._original_events = events
     this.config = config
     this.init(events)
   }
@@ -95,7 +96,7 @@ class Raffle {
   }
 
   shuffle () {
-    this.events = shuffle(this.events)
+    this.init(this._original_events)
   }
 }
 
