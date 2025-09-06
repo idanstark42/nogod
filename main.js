@@ -99,6 +99,7 @@ const Main = (module => {
       color: config['text color'] || 'black',
       fontSize: `${config['text size (px)'] || 20}px`,
       backgroundColor: config['text area background color'] || 'white',
+      padding: `0 ${(100 - config['text width (%)']) / 2}%`
     })
 
     $subtext.css({
@@ -107,7 +108,8 @@ const Main = (module => {
       fontSize: `${config['subtext size (px)'] || 15}px`,
       backgroundColor: config['text area background color'] || 'white',
       opacity: 0,
-      transition: `opacity ${config['subtext transition (sec)']}s linear`
+      transition: `opacity ${config['subtext transition (sec)']}s linear`,
+      padding: `0 ${(100 - config['text width (%)']) / 2}%`
     })
 
     $content.css({ backgroundColor: config['deadzone background color'] })
