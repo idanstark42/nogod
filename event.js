@@ -30,7 +30,6 @@ class Event {
         transition-property: background-position, background-size, top, left, height, width, border-radius, opacity;
         transition-timing-function: linear;
         transition-duration: ${this.config['animation fade duration (sec)'] || 1}s;
-        transition-delay: ${this.config['animation delay (sec)'] || 0}s;
         
         border-radius: ${this.config['icons rounding (%)'] / 2}%;
         background-repeat: no-repeat;
@@ -91,7 +90,13 @@ class Event {
     setTimeout(() => {
       this.startAudio()
       this.runText($main, $text, $subtext)
-    }, (this.config['animation fade duration (sec)'] + this.config['animation move duration (sec)'] + this.config['animation open duration (sec)']) * 1000)
+    }, (this.config['animation fade duration (sec)'] +
+      this.config['animation move duration (sec)'] +
+      this.config['animation open duration (sec)'] +
+      this.config['wait after points fade (sec)'] +
+      this.config['wait after point move (sec)'] +
+      this.config['wait after opening (sec)']
+    ) * 1000)
   }
 
   stop ($main, $text, $subtext) {
@@ -117,7 +122,9 @@ class Event {
     }, this.config['animation fade duration (sec)'] * 1000]
 
     execute([
+      [nothing, this.config['wait after points fade (sec)'] * 1000],
       this.config['move points'] ? moveToPosition : null,
+      [nothing, this.config['wait after point move (sec)'] * 1000],
       [() => {
         console.debug('[event] opening the image')
         this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
@@ -128,28 +135,13 @@ class Event {
           backgroundSize: '100% 100%',
           borderRadius: 0
         })
-      }, this.config['animation move duration (sec)'] * 1000], [() => {
-        this.run()
-      }, this.config['animation open duration (sec)'] * 1000]
+      }, this.config['animation move duration (sec)'] * 1000],
+      [nothing, this.config['wait after opening (sec)'] * 1000],
+      [() => { this.run() }, this.config['animation open duration (sec)'] * 1000]
     ].filter(Boolean))
   }
 
   close ($main) {
-    console.debug('[event] closing the image')
-    const dot = this.dotDimensions
-
-    // going back to the original size
-    this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
-    this.$element.css({
-      ...(this.config['move points'] ? this.iconPosition : this.dotPosition),
-      backgroundSize: `${this['image width (px)'] / this['icon width (px)'] * 100}% ${this['image height (px)'] / this['icon height (px)'] * 100}%`,
-      backgroundPosition: `left ${this['icon center x (%)'] - this['icon width (px)'] / this['image width (px)'] * 50}% top ${this['icon center y (%)'] - this['icon height (px)'] / this['image height (px)'] * 50}%`,
-      height: `${dot.height}%`, width: `${dot.width}%`,
-      borderRadius: this.config['icons rounding (%)'] / 2
-    })
-
-    this.endAudio()
-
     const moveToPosition = [() => {
       console.debug('[event] moving back to the original position')
       this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
@@ -157,7 +149,23 @@ class Event {
     }, this.config['animation open duration (sec)'] * 1000]
 
     execute([
+      [() => {
+        console.debug('[event] closing the image')
+        const dot = this.dotDimensions
+        // going back to the original size
+        this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
+        this.$element.css({
+          ...(this.config['move points'] ? this.iconPosition : this.dotPosition),
+          backgroundSize: `${this['image width (px)'] / this['icon width (px)'] * 100}% ${this['image height (px)'] / this['icon height (px)'] * 100}%`,
+          backgroundPosition: `left ${this['icon center x (%)'] - this['icon width (px)'] / this['image width (px)'] * 50}% top ${this['icon center y (%)'] - this['icon height (px)'] / this['image height (px)'] * 50}%`,
+          height: `${dot.height}%`, width: `${dot.width}%`,
+          borderRadius: this.config['icons rounding (%)'] / 2
+        })
+        this.endAudio()
+      }, this.config['wait before closing (sec)'] * 1000],
+      [nothing, this.config['wait after closing (sec)'] * 1000],
       this.config['move points'] ? moveToPosition : null,
+      [nothing, this.config['wait after point move back (sec)'] * 1000],
       [() => {
         console.debug('[event] revealing other points')
         this.$element.css({ transitionDuration: `${this.config['animation fade duration (sec)']}s` })

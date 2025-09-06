@@ -11,3 +11,7 @@ window.execute = (actions) => {
     execute(actions)
   }, time)
 }
+
+window.nothing = () => {
+  console.debug('[nothing]')
+}
