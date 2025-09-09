@@ -1,6 +1,6 @@
 class Raffle {
   constructor(events, config) {
-    this._original_events = events
+    this._original_events = [...events]
     this.config = config
     this.init(events)
   }
@@ -28,6 +28,7 @@ class Raffle {
   }
 
   enrich (events) {
+    this._original_events = [...events]
     this.events = this.events.map(raw => events.find(event => event[Event.ID_FIELD] === raw[Event.ID_FIELD]))
   }
 

@@ -15,10 +15,10 @@ const Main = (module => {
     
     $('body').on('keypress', e => {
       // if pressing space, play. If pressing 's', stop
-      console.debug('[main] key pressed', e.key)
-      if (e.key === ' ') {
+      console.debug('[main] key pressed', e.code)
+      if (e.code === 'Space') {
         player.start()
-      } else if (e.key === 's') {
+      } else if (e.code === 'KeyS') {
         player.stop()
       }
     })

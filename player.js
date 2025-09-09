@@ -121,8 +121,18 @@ class Player {
     $(this.$main).append(`<div id="image-screen" style="background-image: url(${source}); opacity: 0; transition: opacity ${this.config['screen fade time']}s linear"></div>`)
     return new Promise(resolve => {
       execute([
-        [() => $('#image-screen').css({ opacity: 1 }), 0],
-        [() => $('#image-screen').css({ opacity: 0 }), duration * 1000],
+        [() => {
+          $('#main > :not(#image-screen)').css({ opacity: 0 })
+        }, this.config['animation fade duration (sec)'] * 1000],
+        [() => {
+          $('#image-screen').css({ opacity: 1 })
+        }, this.config['animation fade duration (sec)'] * 1000],
+        [() => {
+          $('#image-screen').css({ opacity: 0 })
+        }, (this.config['screen fade time'] + duration) * 1000],
+        [() => {
+          $('#main > :not(#image-screen)').css({ opacity: 1 })
+        }, this.config['animation fade duration (sec)'] * 1000],
         [() => {
           $('#image-screen').remove()
           resolve()

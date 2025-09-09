@@ -135,7 +135,15 @@ class Event {
           backgroundSize: '100% 100%',
         })
       }, this.config['animation move duration (sec)'] * 1000],
-      [nothing, this.config['wait after opening (sec)'] * 1000],
+      [() => {
+        this.$element.css({ transitionDuration: '0s' })
+        this.$element.css({
+          width: '100%', height: '100%', aspectRatio: 'unset',
+          top: 0, left: 0,
+          borderRadius: 0,
+          transform: 'none'
+        })
+      }, this.config['wait after opening (sec)'] * 1000],
       [() => { this.run() }, this.config['animation open duration (sec)'] * 1000]
     ].filter(Boolean))
   }
@@ -149,18 +157,27 @@ class Event {
 
     execute([
       [() => {
+        this.$element.css({ transitionDuration: '0s' })
+        this.$element.css({
+          width: '288%', height: 'unset', aspectRatio: `${this['dot height (px)'] / this['dot width (px)']}`,
+          ...(this.config['move points'] ? this.iconPosition : this.dotPosition),
+          borderRadius: `${this.config['icons rounding (%)'] / 2}%`,
+          transform: 'translate(-50%, -50%)'
+        })
+      }, this.config['wait before closing (sec)'] * 1000],
+      [() => {
         console.debug('[event] closing the image')
         const dot = this.dotDimensions
         // going back to the original size
         this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
         this.$element.css({
-          ...(this.config['move points'] ? this.iconPosition : this.dotPosition),
           backgroundSize: `${this['image width (px)'] / this['icon width (px)'] * 100}% ${this['image height (px)'] / this['icon height (px)'] * 100}%`,
           backgroundPosition: `left ${this['icon center x (%)'] - this['icon width (px)'] / this['image width (px)'] * 50}% top ${this['icon center y (%)'] - this['icon height (px)'] / this['image height (px)'] * 50}%`,
           width: `${dot.width}%`
         })
+
         this.endAudio()
-      }, this.config['wait before closing (sec)'] * 1000],
+      }, 0],
       [nothing, this.config['wait after closing (sec)'] * 1000],
       this.config['move points'] ? moveToPosition : null,
       [nothing, this.config['wait after point move back (sec)'] * 1000],
@@ -189,8 +206,10 @@ class Event {
 
   endAudio () {
     console.debug('[event] stopping audio')
-    this.audio.pause()
-    this.audio.currentTime = 0
+    if (this.audio) {
+      this.audio.pause()
+      this.audio.currentTime = 0
+    }
   }
 
   runText ($main, $text, $subtext) {
