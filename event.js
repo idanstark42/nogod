@@ -22,10 +22,10 @@ class Event {
       <div referrerPolicy="no-referrer" style="
         position: absolute;
         display: block;
-        left: round(calc(${this['dot position x (%)']}% - ${dot.width / 2}%), 1px);
-        top: round(calc(${this['dot position y (%)']}% - ${dot.height / 2}%), 1px);
-        height: round(${dot.height}%, 1px);
+        left: round(calc(${this['dot position x (%)'] - dot.width / 2}%), 1px);
+        top: round(calc(${this['dot position y (%)'] - dot.height / 2}%), 1px);
         width: round(${dot.width}%, 1px);
+        aspect-ratio: ${this['dot height (px)'] / this['dot width (px)']};
 
         transition-property: background-position, background-size, top, left, height, width, border-radius, opacity;
         transition-timing-function: linear;
@@ -36,6 +36,7 @@ class Event {
         background-color: ${this['dot color']};
         overflow: hidden;
         will-change: transform, opacity;
+        transform: translate(-50%, -50%);
         "
         title="${this['text story']}">
       </div>
@@ -129,11 +130,9 @@ class Event {
         console.debug('[event] opening the image')
         this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
         this.$element.css({
-          top: 0, left: 0,
-          height: '100%', width: '100%',
+          width: '200%',
           backgroundPosition: 'center',
           backgroundSize: '100% 100%',
-          borderRadius: 0
         })
       }, this.config['animation move duration (sec)'] * 1000],
       [nothing, this.config['wait after opening (sec)'] * 1000],
@@ -158,8 +157,7 @@ class Event {
           ...(this.config['move points'] ? this.iconPosition : this.dotPosition),
           backgroundSize: `${this['image width (px)'] / this['icon width (px)'] * 100}% ${this['image height (px)'] / this['icon height (px)'] * 100}%`,
           backgroundPosition: `left ${this['icon center x (%)'] - this['icon width (px)'] / this['image width (px)'] * 50}% top ${this['icon center y (%)'] - this['icon height (px)'] / this['image height (px)'] * 50}%`,
-          height: `${dot.height}%`, width: `${dot.width}%`,
-          borderRadius: this.config['icons rounding (%)'] / 2
+          width: `${dot.width}%`
         })
         this.endAudio()
       }, this.config['wait before closing (sec)'] * 1000],
