@@ -51,14 +51,6 @@ class Player {
     this.currentEvent.stop(this.$main, this.$text, this.$subtext)
   }
 
-  toggle () {
-    if (this.status === 'playing') {
-      this.stop()
-    } else {
-      this.start()
-    }
-  }
-
   end () {
     console.debug('[player] end')
     if (this.endScreenFile) {

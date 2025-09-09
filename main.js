@@ -14,10 +14,12 @@ const Main = (module => {
     $('#loader').fadeOut(500, () => $('#content').fadeIn(500))
     
     $('body').on('keypress', e => {
-      // if pressing space, toggle play/pause
+      // if pressing space, play. If pressing 's', stop
       console.debug('[main] key pressed', e.key)
       if (e.key === ' ') {
-        player.toggle()
+        player.start()
+      } else if (e.key === 's') {
+        player.stop()
       }
     })
   }
