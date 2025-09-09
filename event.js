@@ -130,7 +130,7 @@ class Event {
         console.debug('[event] opening the image')
         this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
         this.$element.css({
-          width: '200%',
+          width: '290%',
           backgroundPosition: 'center',
           backgroundSize: '100% 100%',
         })
