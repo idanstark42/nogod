@@ -111,87 +111,43 @@ class Event {
     $subtext.css({ opacity: 0 })
   }
 
-  open ($main) {
-    console.debug('[event] hiding other points')
-    $main.children().filter((i, el) => el !== this.$element[0]).css({ opacity: 0 })
+  async open ($main) {
+    await this.step('hiding other points', () => {
+      this.toggleOtherPoints(false, $main)
+    }, (this.config['animation fade duration (sec)'] + this.config['wait after points fade (sec)']) * 1000)
 
-    const moveToPosition = [() => {
-      // move the element to the correct position
-      console.debug('[event] moving to the correct position')
-      this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
-      this.$element.css(this.iconPosition)
-    }, this.config['animation fade duration (sec)'] * 1000]
+    if (this.config['move points']) {
+      await this.step('moving to the correct position', () => {
+        this.movePointTo(this.iconPosition)
+      }, (this.config['animation move duration (sec)'] + this.config['wait after point move (sec)']) * 1000)
+    }
 
-    execute([
-      [nothing, this.config['wait after points fade (sec)'] * 1000],
-      this.config['move points'] ? moveToPosition : null,
-      [nothing, this.config['wait after point move (sec)'] * 1000],
-      [() => {
-        console.debug('[event] opening the image')
-        this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
-        this.$element.css({
-          width: '290%',
-          backgroundPosition: 'center',
-          backgroundSize: '100% 100%',
-        })
-      }, this.config['animation move duration (sec)'] * 1000],
-      [() => {
-        this.$element.css({ transitionDuration: '0s' })
-        this.$element.css({
-          width: '100%', height: '100%', aspectRatio: 'unset',
-          top: 0, left: 0,
-          borderRadius: 0,
-          transform: 'none'
-        })
-      }, this.config['wait after opening (sec)'] * 1000],
-      [() => { this.run() }, this.config['animation open duration (sec)'] * 1000]
-    ].filter(Boolean))
+    await this.step('opening up', () => this.openUp(), this.config['animation open duration (sec)'] * 1000)
+
+    this.reshapeToSquare()
+    await wait(this.config['wait after opening (sec)'] * 1000)
+    this.run()
   }
 
-  close ($main) {
-    const moveToPosition = [() => {
-      console.debug('[event] moving back to the original position')
-      this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
-      this.$element.css(this.dotPosition)
-    }, this.config['animation open duration (sec)'] * 1000]
+  async close ($main) {
+    await wait(this.config['wait before closing (sec)'] * 1000)
+    this.reshapeToCircle()
+    
+    await until(() => this.isCircle())
+    this.endAudio()
+    
+    await this.step('closing down', () => this.closeDown(), (this.config['animation open duration (sec)'] + this.config['wait after closing (sec)']) * 1000)
 
-    execute([
-      [() => {
-        this.$element.css({ transitionDuration: '0s' })
-        this.$element.css({
-          width: '288%', height: 'unset', aspectRatio: `${this['dot height (px)'] / this['dot width (px)']}`,
-          ...(this.config['move points'] ? this.iconPosition : this.dotPosition),
-          borderRadius: `${this.config['icons rounding (%)'] / 2}%`,
-          transform: 'translate(-50%, -50%)'
-        })
-      }, this.config['wait before closing (sec)'] * 1000],
-      [() => {
-        console.debug('[event] closing the image')
-        const dot = this.dotDimensions
-        // going back to the original size
-        this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
-        this.$element.css({
-          backgroundSize: `${this['image width (px)'] / this['icon width (px)'] * 100}% ${this['image height (px)'] / this['icon height (px)'] * 100}%`,
-          backgroundPosition: `left ${this['icon center x (%)'] - this['icon width (px)'] / this['image width (px)'] * 50}% top ${this['icon center y (%)'] - this['icon height (px)'] / this['image height (px)'] * 50}%`,
-          width: `${dot.width}%`
-        })
+    if (this.config['move points']) {
+      await this.step('moving back to the original position', () => this.movePointTo(this.dotPosition), (this.config['animation move duration (sec)'] + this.config['wait after point move back (sec)']) * 1000)
+    }
 
-        this.endAudio()
-      }, 0],
-      [nothing, this.config['wait after closing (sec)'] * 1000],
-      this.config['move points'] ? moveToPosition : null,
-      [nothing, this.config['wait after point move back (sec)'] * 1000],
-      [() => {
-        console.debug('[event] revealing other points')
-        this.$element.css({ transitionDuration: `${this.config['animation fade duration (sec)']}s` })
-        $main.children().css({ opacity: 1 })
-      }, this.config['animation move duration (sec)'] * 1000],
-      [() => {
-        if (this.hasOwnProperty('onClose') && typeof this.onClose === 'function') {
-          this.onClose()
-        }
-      }, this.config['animation fade duration (sec)'] * 1000]
-    ].filter(Boolean))
+    await this.step('revealing other points', () => this.toggleOtherPoints(true, $main), this.config['animation fade duration (sec)'] * 1000)
+    this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
+
+    if (this.hasOwnProperty('onClose') && typeof this.onClose === 'function') {
+      this.onClose()
+    }
   }
 
   startAudio () {
@@ -228,16 +184,74 @@ class Event {
       this.close($main)
     }
 
-    execute([
-      [() => {
-        console.debug('[event] revealing subtext')
-        $subtext.css({ opacity: 1 })
-      }, this.config['subtext delay (sec)'] * 1000],
-      [() => {
-        console.debug('[event] hiding subtext')
-        $subtext.css({ opacity: 0 })
-      }, this.config['subtext duration (sec)'] * 1000]
-    ])
+    (async () => {
+      await wait(this.config['subtext delay (sec)'] * 1000)
+      console.debug('[event] revealing subtext')
+      $subtext.css({ opacity: 1 })
+      
+      await wait(this.config['subtext duration (sec)'] * 1000)
+      console.debug('[event] hiding subtext')
+      $subtext.css({ opacity: 0 })
+    }) ()
+  }
+
+  async step (title, execute, duration) {
+    console.debug(`[event] ${title}`)
+    execute()
+    await wait(duration) 
+  }
+
+  toggleOtherPoints (visible, $main) {
+    $main.children().filter((i, el) => el !== this.$element[0]).css({ opacity: visible ? 1 : 0 })
+  }
+
+  movePointTo (position) {
+    this.$element.css({ transitionDuration: `${this.config['animation move duration (sec)']}s` })
+    this.$element.css(position)
+  }
+
+  openUp () {
+    this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
+    this.$element.css({
+      width: '290%',
+      backgroundPosition: 'center',
+      backgroundSize: '100% 100%',
+    })
+  }
+
+  closeDown () {
+    const dot = this.dotDimensions
+    this.$element.css({ transitionDuration: `${this.config['animation open duration (sec)']}s` })
+    this.$element.css({
+      backgroundSize: `${this['image width (px)'] / this['icon width (px)'] * 100}% ${this['image height (px)'] / this['icon height (px)'] * 100}%`,
+      backgroundPosition: `left ${this['icon center x (%)'] - this['icon width (px)'] / this['image width (px)'] * 50}% top ${this['icon center y (%)'] - this['icon height (px)'] / this['image height (px)'] * 50}%`,
+      width: `${dot.width}%`
+    })
+  }
+
+  reshapeToSquare () {
+    this.$element.css({ transitionDuration: '0s' })
+    this.$element.css({
+      width: '100%', height: '100%', aspectRatio: 'unset',
+      top: 0, left: 0,
+      borderRadius: 0,
+      transform: 'none'
+    })
+  }
+
+  reshapeToCircle () {
+    this.$element.css({ transitionDuration: '0s' })
+    this.$element.css({
+      width: '290%', height: 'unset', aspectRatio: `${this['dot height (px)'] / this['dot width (px)']}`,
+      ...(this.config['move points'] ? this.iconPosition : this.dotPosition),
+      borderRadius: `${this.config['icons rounding (%)'] / 2}%`,
+      transform: 'translate(-50%, -50%)'
+    })
+  }
+
+  isCircle () {
+    console.log(this.$element.css('border-radius'))
+    return Number(this.$element.css('border-radius').replace('%', '')) > 0
   }
 
   static build (raw, config) {
@@ -253,145 +267,4 @@ const FACTORY = {
   private: (raw, config) => new ImagesEvent(raw, config, raw['image files'] || ''),
   'raffle image': (raw, config) => new ImagesEvent(raw, config, raw.file),
   'raffle video': (raw, config) => new VideoEvent(raw, config),
-}
-
-class ImagesEvent extends Event {
-  constructor (raw, config, images) {
-    super(raw, config)
-    this.parseImages(images)
-  }
-
-  parseImages (images) {
-    const imageLines = images
-      .split('\n')
-      .filter(imageFile => imageFile.length > 0)
-      .map(imageFile => imageFile.trim()) 
-    this.imageFiles = imageLines.map(imageLine => imageLine.match(NUMBER_REGEX) ? imageLine.replace(NUMBER_REGEX, '') : imageLine)
-    this.imageTimes = imageLines.map(imageLine => imageLine.match(NUMBER_REGEX) ? parseFloat(imageLine.match(NUMBER_REGEX)[1]) : (this.config['image time (sec)'] || 5))
-  }
-
-  get filesCount () {
-    return this.imageFiles.length + 1
-  }
-
-  loadFiles (loader, $main) {
-    super.loadFiles(loader, $main)
-    this.images = []
-
-    this.imageFiles.forEach((imageFile, index) => {
-      Backend.loadFile(imageFile, 'image').then(data => {
-        this.images[index] = data
-        if (index === 0 && this['dot color'].trim() === '') {
-          this.$element.css({
-            backgroundImage: `url(${data})`,
-            backgroundSize: `${this['image width (px)'] / this['icon width (px)'] * 100}% ${this['image height (px)'] / this['icon height (px)'] * 100}%`,
-            backgroundPosition: `left ${this['icon center x (%)'] - this['icon width (px)'] / this['image width (px)'] * 50}% top ${this['icon center y (%)'] - this['icon height (px)'] / this['image height (px)'] * 50}%`,
-          })
-        }
-        loader.next()
-      })
-    })
-  }
-
-  close ($main) {
-    if (this.carouselTimeoutHolder) {
-      console.debug('[event] stopping image carousel')
-      clearTimeout(this.carouselTimeoutHolder.timeout)
-      this.carouselTimeoutHolder = null
-    }
-    if (this['dot color'].trim() !== '') {
-      this.$element.css({ backgroundImage: '' })
-    }
-    super.close($main)
-  }
-
-  run () {
-    if (this.imageFiles.length === 0) {
-      return
-    }
-
-    console.debug('[event] starting image carousel')
-    this.carouselTimeoutHolder = iterate(this.images, image => {
-      this.$element.css({ backgroundImage: `url(${image})` })
-    }, this.imageTimes, true)
-  }
-}
-
-class VideoEvent extends Event {
-  constructor (raw, config) {
-    super(raw, config)
-    this.parseVideo()
-  }
-
-  parseVideo () {
-    this.videoFile = this.file
-  }
-
-  get filesCount () {
-    return super.filesCount + 1
-  }
-
-  loadFiles (loader, $main) {
-    super.loadFiles(loader, $main)
-    Backend.loadFile(this.videoFile, 'video').then(data => {
-      this.$element[0].innerHTML = `
-        <video muted playsinline style="
-          width: 100%; height: 100%;
-          top: 0; left: 0;
-          position: absolute;
-          background-color: black;
-          border-radius: 0;
-          ${this['dot color'].trim() !== '' ? 'display: none;' : ''}
-        ">
-          <source src="${data}" type="video/mp4">
-          Your browser does not support the video tag.
-        </video>
-      `
-      setTimeout(() => {
-        this.$element.children('video')[0].addEventListener('loadedmetadata', () => {
-          this.originalVideoDuration = this.$element.children('video')[0].duration
-          this.speed = this.originalVideoDuration / this.totalTime
-          this.$element.children('video')[0].playbackRate = this.speed
-        })
-      })
-      loader.next()
-    })
-  }
-
-  run () {
-    if (this.videoFile.length === 0) {
-      return
-    }
-    this.$element.children('video').css({ display: 'block' })
-    setTimeout(() => {
-      console.debug('[event] starting video')
-      this.$element.children('video')[0].play()
-    }, this['text delay (sec)'] * 1000)
-  }
-
-  close ($main) {
-    super.close($main)
-    this.$element.children('video').css({ display: 'none' })
-  }
-}
-
-const iterate = (arr, func, times, repeat=false, index=0, iterationManager={ stop: false }) => {
-  if (iterationManager.stop) {
-    return
-  }
-  
-  if (index >= arr.length) {
-    if (repeat) {
-      index = 0
-    } else {
-      if (iterationManager.onDone) {
-        iterationManager.onDone()
-      }
-      return
-    }
-  }
-
-  func(arr[index])
-  iterationManager.timeout = setTimeout(() => iterate(arr, func, times, repeat, index + 1, iterationManager), times[index] * 1000)
-  return iterationManager
 }

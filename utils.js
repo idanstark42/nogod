@@ -1,15 +1,18 @@
 window.wait = async ms => new Promise(resolve => setTimeout(resolve, ms))
 
-window.execute = (actions) => {
-  const doblet = actions.shift()
-  if (!doblet) {
-    return
-  }
-  const [action, time] = doblet
-  setTimeout(() => {
-    action()
-    execute(actions)
-  }, time)
+window.until = (condition, throttle = 10) => {
+  return new Promise(resolve => {
+
+    const next = () => {
+      if (condition()) {
+        resolve()
+      } else {
+        setTimeout(next, throttle)
+      }
+    }
+
+    next()
+  })
 }
 
 window.nothing = () => {

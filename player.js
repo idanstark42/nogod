@@ -90,6 +90,7 @@ class Player {
 
   _start () {
     this.currentIndex = 0
+    this.status = 'playing'
 
     if (this.startScreenFile) {      
       this.showStartScreen()
@@ -100,7 +101,6 @@ class Player {
 
   _playFirstEvent () {
     this.currentEvent.start(this.$main, this.$text, this.$subtext)
-    this.status = 'playing'
   }
 
   _showVideo (source) {
@@ -116,28 +116,19 @@ class Player {
     })
   }
 
-  _showImage (source, duration) {
+  async _showImage (source, duration) {
     console.debug(`[player] showing image for ${duration} seconds`)
+
     $(this.$main).append(`<div id="image-screen" style="background-image: url(${source}); opacity: 0; transition: opacity ${this.config['screen fade time']}s linear"></div>`)
-    return new Promise(resolve => {
-      execute([
-        [() => {
-          $('#main > :not(#image-screen)').css({ opacity: 0 })
-        }, this.config['animation fade duration (sec)'] * 1000],
-        [() => {
-          $('#image-screen').css({ opacity: 1 })
-        }, this.config['animation fade duration (sec)'] * 1000],
-        [() => {
-          $('#image-screen').css({ opacity: 0 })
-        }, (this.config['screen fade time'] + duration) * 1000],
-        [() => {
-          $('#main > :not(#image-screen)').css({ opacity: 1 })
-        }, this.config['animation fade duration (sec)'] * 1000],
-        [() => {
-          $('#image-screen').remove()
-          resolve()
-        }, this.config['screen fade time'] * 1000]
-      ])
-    })
+    await wait(this.config['animation fade duration (sec)'] * 1000)
+    $('#main > :not(#image-screen)').css({ opacity: 0 })
+    await wait(this.config['animation fade duration (sec)'] * 1000)
+    $('#image-screen').css({ opacity: 1 })
+    await wait((this.config['screen fade time'] + duration) * 1000)
+    $('#image-screen').css({ opacity: 0 })
+    await wait(this.config['animation fade duration (sec)'] * 1000)
+    $('#main > :not(#image-screen)').css({ opacity: 1 })
+    await wait(this.config['screen fade time'] * 1000)
+    $('#image-screen').remove()
   }
 }
