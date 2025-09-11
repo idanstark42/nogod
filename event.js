@@ -250,7 +250,6 @@ class Event {
   }
 
   isCircle () {
-    console.log(this.$element.css('border-radius'))
     return Number(this.$element.css('border-radius').replace('%', '')) > 0
   }
 
