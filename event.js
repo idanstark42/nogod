@@ -104,8 +104,10 @@ class Event {
     console.debug(`[event] stopping ${this['text number']} (${this.constructor.name})`)
     this.close($main)
     this.endAudio()
-    this.textIterationManager.stop = true
-    this.textIterationManager = null
+    if (this.textIterationManager) {
+      this.textIterationManager.stop = true
+      this.textIterationManager = null
+    }
     $text[0].innerHTML = ''
     $subtext[0].innerHTML = ''
     $subtext.css({ opacity: 0 })
