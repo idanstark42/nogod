@@ -1,5 +1,5 @@
 const Backend = (module => {
-  const BASE_URL = 'https://script.google.com/macros/s/AKfycbzfa_gDtyAX-mU5nG68kl4yQrXAPpDLqihmFUNJhVxwMaWKC2NveUEiP-ygeQDsOw7TIQ/exec'
+  const BASE_URL = 'https://script.google.com/macros/s/AKfycbwajVIyGgHj0SZns0mY80cOz1Ca2VQ5Btfg3Z41G1KP9i5hwE7AaCzgSiwrNaFIlyNHog/exec'
 
   module.load = async (version) => {
     console.debug('[backend] loading data')
