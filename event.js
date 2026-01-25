@@ -94,8 +94,7 @@ class Event {
     }, (this.config['animation fade duration (sec)'] +
       this.config['animation move duration (sec)'] +
       this.config['animation open duration (sec)'] +
-      this.config['wait after points fade (sec)'] +
-      this.config['wait after point move (sec)'] +
+      (this.config['move points'] ? this.config['wait after points fade (sec)'] + this.config['wait after point move (sec)'] : 0) +
       this.config['wait after opening (sec)']
     ) * 1000)
   }

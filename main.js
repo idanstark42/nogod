@@ -1,6 +1,6 @@
 
 const Main = (module => {
-  let $mainContainer, $main, $text, $subtext, $content, version, player
+  let $mainContainer, $main, $text, $subtext, $content, version, player, startThrottle, stopThrottle
 
   module.init = async () => {
     initVariables()
@@ -12,14 +12,22 @@ const Main = (module => {
     }
 
     $('#loader').fadeOut(500, () => $('#content').fadeIn(500))
-    
+
+    startThrottle = Throttle(() => {
+      player.start()
+    }, 1000)
+
+    stopThrottle = Throttle(() => {
+      player.stop()
+    }, 1000)
+
     $('body').on('keypress', e => {
       // if pressing space, play. If pressing 's', stop
       console.debug('[main] key pressed', e.code)
       if (e.code === 'Space') {
-        player.start()
+        startThrottle()
       } else if (e.code === 'KeyS') {
-        player.stop()
+        stopThrottle()
       }
     })
   }
