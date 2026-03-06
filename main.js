@@ -109,7 +109,8 @@ const Main = (module => {
       color: config['text color'] || 'black',
       fontSize: `${config['text size (px)'] || 20}px`,
       backgroundColor: config['text area background color'] || 'white',
-      padding: `0 ${(100 - config['text width (%)']) / 2}%`
+      padding: `0 ${(100 - config['text width (%)']) / 2}%`,
+      direction: config['left-to-right'] ? 'ltr' : 'rtl'
     })
 
     $subtext.css({
@@ -119,7 +120,8 @@ const Main = (module => {
       backgroundColor: config['text area background color'] || 'white',
       opacity: 0,
       transition: `opacity ${config['subtext transition (sec)']}s linear`,
-      padding: `0 ${(100 - config['text width (%)']) / 2}%`
+      padding: `0 ${(100 - config['text width (%)']) / 2}%`,
+      direction: config['left-to-right'] ? 'ltr' : 'rtl'
     })
 
     $content.css({ backgroundColor: config['deadzone background color'] })
