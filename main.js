@@ -108,6 +108,7 @@ const Main = (module => {
       bottom: `${config['text position (%)'] || 30}%`,
       color: config['text color'] || 'black',
       fontSize: `${config['text size (px)'] || 20}px`,
+      lineHeight: `${config['text line height (px)'] || 30}px`,
       backgroundColor: config['text area background color'] || 'white',
       padding: `0 ${(100 - config['text width (%)']) / 2}%`,
       direction: config['left-to-right'] ? 'ltr' : 'rtl'
@@ -117,6 +118,7 @@ const Main = (module => {
       bottom: `${config['subtext position (%)'] || 20}%`,
       color: config['text color'] || 'black',
       fontSize: `${config['subtext size (px)'] || 15}px`,
+      lineHeight: `${config['subtext line height (px)'] || 20}px`,
       backgroundColor: config['text area background color'] || 'white',
       opacity: 0,
       transition: `opacity ${config['subtext transition (sec)']}s linear`,
