@@ -61,7 +61,7 @@ const Main = (module => {
       $text[0].innerHTML = text
     }, () => {
       $text[0].innerHTML = ''
-      $text.css({ direction: 'rtl' })
+      $text.css({ direction: config['left-to-right'] ? 'ltr' : 'rtl' })
     })
 
     console.debug('[main] loading files')
