@@ -10,7 +10,7 @@ const Index = (module => {
     if (configs.length === 0) {
       listDiv.innerHTML = `<div class="no-config">No versions available yet. Create a new one.</div>`
     } else {
-      listDiv.innerHTML = configs.map(config => `<div class="config" version="${config}">
+      listDiv.innerHTML = configs.map(config => `<div class="config segment" version="${config}">
         <div class="name">${config}</div>
         <div class="run">run</div>
         <div class="edit">edit</div>

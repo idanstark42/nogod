@@ -47,19 +47,6 @@ button:active {
   padding: 1rem;
 }
 
-.config {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-
-  padding: 10px 16px;
-
-  background: #222;
-
-  transition: all 0.25s ease;
-}
-
 .config .name {
   flex: 1;
   font-size: 16px;
