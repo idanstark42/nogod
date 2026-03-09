@@ -12,3 +12,19 @@ body {
 h1, h2, h3, h4, h5, h6 {
   margin: 0;
 }
+
+#close-button {
+  font-family: sans-serif;
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  font-size: 2rem;
+  color: red;
+  cursor: pointer;
+}
+
+#close-button:not(:hover) {
+  opacity: 0;
+}
