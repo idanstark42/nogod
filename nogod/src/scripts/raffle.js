@@ -123,3 +123,5 @@ function shuffle (array) {
 function random (min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
+
+window.Raffle = Raffle

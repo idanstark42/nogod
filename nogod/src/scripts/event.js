@@ -263,6 +263,8 @@ class Event {
   }
 }
 
+window.Event = Event
+
 const FACTORY = {
   private: (raw, config) => new ImagesEvent(raw, config, raw['image files'] || ''),
   'raffle image': (raw, config) => new ImagesEvent(raw, config, raw.file),

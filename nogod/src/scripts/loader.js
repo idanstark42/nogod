@@ -21,3 +21,5 @@ class Loader {
     console.debug(`[loader] ${this.loaded}/${this.total}`)
   }
 }
+
+window.Loader = Loader

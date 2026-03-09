@@ -1,5 +1,5 @@
 
-const Main = (module => {
+const Nogod = (module => {
   let $mainContainer, $main, $text, $subtext, $content, version, player, startThrottle, stopThrottle
 
   module.init = async () => {
@@ -132,3 +132,5 @@ const Main = (module => {
   return module
 
 })({})
+
+window.Nogod = Nogod

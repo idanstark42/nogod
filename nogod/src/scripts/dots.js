@@ -51,3 +51,5 @@ const Dots = (module => {
   return module
 
 }) ({})
+
+window.Dots = Dots

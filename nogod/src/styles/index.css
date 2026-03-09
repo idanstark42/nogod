@@ -1,0 +1,85 @@
+body, html {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  justify-content: center;
+  background-color: black;
+  color: white;
+}
+
+button {
+  background: #111; /* dark button */
+  color: #fff; /* white text */
+  border: 2px solid #fff;
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background: #fff;
+  color: #111;
+  border-color: #111;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+#config-list {
+  width: 20rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.config {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  padding: 10px 16px;
+
+  background: #222;
+
+  transition: all 0.25s ease;
+}
+
+.config .name {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.config .run,
+.config .edit {
+  padding: 4px 10px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  cursor: pointer;
+
+  font-size: 14px;
+
+  transition: all 0.2s ease;
+}
+
+.config .run:hover,
+.config .edit:hover {
+  background: white;
+  color: #111;
+}

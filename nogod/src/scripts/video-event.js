@@ -55,3 +55,5 @@ class VideoEvent extends Event {
     this.$element.children('video').css({ display: 'none' })
   }
 }
+
+window.VideoEvent = VideoEvent

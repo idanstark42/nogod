@@ -18,3 +18,5 @@ const Font = (module => {
   return module
 
 })({})
+
+window.Font = Font

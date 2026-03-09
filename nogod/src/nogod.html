@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>There is No God</title>
+  <link rel="stylesheet" href="./styles/base.css">
+  <link rel="stylesheet" href="./styles/nogod.css">
+</head>
+<body>
+<div id="loader">
+  <div id="loading">Loading...</div>
+</div>
+<div id="content">
+  <div id="main-container">
+    <div id="main"></div>
+  </div>
+  <div id="text"></div>
+  <div id="subtext"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="./scripts/utils.js"></script>
+<script src="./scripts/backend.js"></script>
+<script src="./scripts/loader.js"></script>
+<script src="./scripts/font.js"></script>
+<script src="./scripts/dots.js"></script>
+<script src="./scripts/event.js"></script>
+<script src="./scripts/images-event.js"></script>
+<script src="./scripts/video-event.js"></script>
+<script src="./scripts/raffle.js"></script>
+<script src="./scripts/player.js"></script>
+<script src="./scripts/nogod.js"></script>
+<script type="text/javascript">
+  const NUMBER_REGEX = /\[(\d+(\.\d+)?)\]$/
+  $(document).ready(Nogod.init)
+</script>
+</body>
+</html>

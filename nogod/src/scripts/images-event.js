@@ -59,3 +59,5 @@ class ImagesEvent extends Event {
     }, this.imageTimes, true)
   }
 }
+
+window.ImagesEvent = ImagesEvent

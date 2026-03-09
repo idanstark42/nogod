@@ -132,3 +132,5 @@ class Player {
     $('#image-screen').remove()
   }
 }
+
+window.Player = Player
