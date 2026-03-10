@@ -5,46 +5,34 @@ body, html {
   padding: 0;
 }
 
-body {
+.index {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2rem;
-  justify-content: center;
-  background-color: black;
-  color: white;
+  margin: auto;
+  width: 24rem;
+  margin-top: calc(50vh - 15rem);
 }
 
-button {
-  background: #111; /* dark button */
-  color: #fff; /* white text */
-  border: 2px solid #fff;
-  border-radius: 8px;
-  padding: 12px 28px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-button:hover {
-  background: #fff;
-  color: #111;
-  border-color: #111;
-}
-
-button:active {
-  transform: translateY(1px);
-}
 
 #config-list {
-  width: 20rem;
+  width: 24rem;
+  max-height: 20rem;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 1rem;
   padding: 1rem;
+  overflow-y: auto;
+}
+
+.config {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .config .name {

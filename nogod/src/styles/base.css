@@ -2,7 +2,10 @@
 body {
   margin: 0;
   padding: 0;
+  overflow: hidden;
   font-family: Arial, sans-serif;
+  background: black;
+  color: white;
 }
 
 * {
@@ -14,16 +17,37 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .segment {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 1rem;
+  z-index: 100;
+}
 
-  padding: 10px 16px;
 
-  background: #222;
+button {
+  background: #111; /* dark button */
+  color: #fff; /* white text */
+  border: 2px solid #fff;
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
 
-  transition: all 0.25s ease;
+button:hover {
+  background: #fff;
+  color: #111;
+  border-color: #111;
+}
+
+button:active {
+  transform: translateY(1px);
 }
 
 #close-button {
@@ -40,4 +64,34 @@ h1, h2, h3, h4, h5, h6 {
 
 #close-button:not(:hover) {
   opacity: 0;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #888 #111;
+}
+
+/* WebKit (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 6px;
+  border: 2px solid #111;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #fff;
+}
+
+::-webkit-scrollbar-corner {
+  background: #111;
 }

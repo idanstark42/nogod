@@ -42,11 +42,20 @@ const Index = (module => {
     createBtn.onclick = createNew
     $('.config .run').click(run)
     $('.config .edit').click(edit)
+
+    Dots.init($(document.body), {
+      'dots count': 400,
+      'dots size': 2,
+      'dots speed': 20,
+      'dots color': '#FFFFFF'
+    })
   }
 
-  module.template = `<h1>Available Versions</h1>
+  module.template = `<div class="index segment">
+    <h1>Available Versions</h1>
     <div id="config-list"></div>
-    <button id="create-new">Create New Version</button>`
+    <button id="create-new">Create New Version</button>
+  </div>`
 
   return module
 
