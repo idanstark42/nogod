@@ -29,8 +29,8 @@ h1, h2, h3, h4, h5, h6 {
 
 
 button {
-  background: #111; /* dark button */
-  color: #fff; /* white text */
+  background: #111;
+  color: #fff;
   border: 2px solid #fff;
   border-radius: 8px;
   padding: 12px 28px;

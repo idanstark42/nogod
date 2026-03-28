@@ -122,3 +122,35 @@
   grid-column: 2 / 4;
   grid-row: 3 / 4;
 }
+
+#layout-demo {
+  position: relative;
+  margin: 1rem;
+  width: calc(100% - 2rem);
+  aspect-ratio: calc(100vw / 100vh);
+  background: #000000DD;
+  border: #FFFFFFDD solid 1px;
+}
+
+#layout-demo-main-container {
+  position: absolute;
+  width: 100%;
+  background: none;
+}
+
+#layout-demo-main {
+  position: relative;
+  margin: auto;
+  height: 100%;
+  overflow: hidden;
+}
+
+#layout-demo-text, #layout-demo-subtext {
+  position: absolute;
+  width: 100%;
+}
+
+#layout-demo-main, #layout-demo-text, #layout-demo-subtext {
+  background: #000000DD;
+  border: #FFFFFFDD solid 1px;
+}

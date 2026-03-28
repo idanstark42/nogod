@@ -8,7 +8,28 @@ const Config = (module => {
   }
   
   function setConfigToUI (config) {
+    config = Object.assign({}, config, DEFAULT_CONFIG)
 
+    Object.keys(config).forEach(key => {
+      $(`input[name="${key}"]`).val(config[key])
+    })
+
+    $('#layout-demo-main-container').css({
+      height: `${config['image area height (%)'] || 50}%`,
+      bottom: `${config['image area position (%)'] || 50}%`
+    })
+
+    $('#layout-demo-main').css({
+      aspectRatio: String(config['map aspect ratio'])
+    })
+
+    $('#layout-demo-text').css({
+      bottom: `${config['text position (%)'] || 30}%`
+    })
+
+    $('#layout-demo-subtext').css({
+      bottom: `${config['subtext position (%)'] || 20}%`
+    })
   }
 
   module.init = async () => {
@@ -33,17 +54,17 @@ const Config = (module => {
     setConfigToUI(config)
 
     Dots.init($(document.body), {
-      'dots count': 400,
+      'dots count': 200,
       'dots size': 2,
       'dots speed': 20,
       'dots color': '#FFFFFF'
     })
   }
   
-  function input(name, type, value) {
+  function input(name, type) {
     return `<div class="input">
       <label>${name}</label>
-      <input type="${type}" name="${name}" ${type === "checkbox" ? `checked="${Boolean(value)}"` : `value="${value ?? ""}"`}>
+      <input type="${type}" name="${name}">
     </div>`
   }
 
@@ -55,77 +76,84 @@ const Config = (module => {
 
   const FIELDS_HTML = `<div class="box page-layout">
     <h3>Page layout</h3>
-    ${input('map aspect ratio', 'number', 1.5)}
-    ${input('map height (px)', 'number', 1701)}
-    ${input('image area height (%)', 'number', 55)}
-    ${input('image area position (%)', 'number', 35)}
-    ${input('text position (%)', 'number', 15)}
-    ${input('subtext position (%)', 'number', 15)}
-    ${input('text width (%)', 'number', 80)}
+    ${input('map aspect ratio', 'number')}
+    ${input('map height (px)', 'number')}
+    ${input('image area height (%)', 'number')}
+    ${input('image area position (%)', 'number')}
+    ${input('text position (%)', 'number')}
+    ${input('subtext position (%)', 'number')}
+    ${input('text width (%)', 'number')}
+    <div id="layout-demo">
+      <div id="layout-demo-main-container">
+        <div id="layout-demo-main"></div>
+      </div>
+      <div id="layout-demo-text"></div>
+      <div id="layout-demo-subtext"></div>
+    </div>
   </div>
   <div class="box timeline">
     <h3>timeline</h3>
-    ${input('animation fade duration (sec)', 'number', 1)}
-    ${input('animation move duration (sec)', 'number', 1)}
-    ${input('animation open duration (sec)', 'number', 2)}
-    ${input('animation delay (sec)', 'number', 0)}
-    ${input('text time (sec)', 'number', 5)}
-    ${input('image time (sec)', 'number', 3)}
-    ${input('subtext delay (sec)', 'number', 0)}
-    ${input('subtext duration (sec)', 'number', 0)}
-    ${input('subtext transition (sec)', 'number', 0)}
-    ${input('time between events (sec)', 'number', 2)}
-    ${input('time after start screen (sec)', 'number', 0)}
-    ${input('wait after points fade (sec)', 'number', 3)}
-    ${input('wait after point move (sec)', 'number', 0)}
-    ${input('wait after opening (sec)', 'number', 1)}
-    ${input('wait before closing (sec)', 'number', 1)}
-    ${input('wait after closing (sec)', 'number', 1)}
-    ${input('wait after point move back (sec)', 'number', 1)}
+    ${input('animation fade duration (sec)', 'number')}
+    ${input('animation move duration (sec)', 'number')}
+    ${input('animation open duration (sec)', 'number')}
+    ${input('animation delay (sec)', 'number')}
+    ${input('text time (sec)', 'number')}
+    ${input('image time (sec)', 'number')}
+    ${input('subtext delay (sec)', 'number')}
+    ${input('subtext duration (sec)', 'number')}
+    ${input('subtext transition (sec)', 'number')}
+    ${input('time between events (sec)', 'number')}
+    ${input('time after start screen (sec)', 'number')}
+    ${input('wait after points fade (sec)', 'number')}
+    ${input('wait after point move (sec)', 'number')}
+    ${input('wait after opening (sec)', 'number')}
+    ${input('wait before closing (sec)', 'number')}
+    ${input('wait after closing (sec)', 'number')}
+    ${input('wait after point move back (sec)', 'number')}
   </div>
   <div class="box color-and-audio">
     <h3>colors & audio</h3>
-    ${input('audio volume (%)', 'number', 100)}
-    ${input('text area background color', 'color', '#000000')}
-    ${input('main background color', 'color', '#EEEEEE')}
-    ${input('deadzone background color', 'color', '#000000')}
-    ${input('text color', 'color', '#EEEEEE')}
+    ${input('audio volume (%)', 'number')}
+    ${input('text area background color', 'color')}
+    ${input('main background color', 'color')}
+    ${input('deadzone background color', 'color')}
+    ${input('text color', 'color')}
   </div>
   <div class="box text-design">
     <h3>text design</h3>
-    ${input('direction left-to-right', 'toggle', false)}
-    ${input('text line height (px)', 'number', 50)}
-    ${input('subtext line height (px)', 'number', 30)}
-    ${input('text size (px)', 'number', 23)}
-    ${input('subtext size (px)', 'number', 25)}
+    ${input('direction left-to-right', 'toggle')}
+    ${input('text line height (px)', 'number')}
+    ${input('subtext line height (px)', 'number')}
+    ${input('text size (px)', 'number')}
+    ${input('subtext size (px)', 'number')}
   </div>
   <div class="box moving-points">
     <h3>moving points</h3>
-    ${input('show dots', 'toggle', true)}
-    ${input('dots count', 'number', 200)}
-    ${input('dots speed', 'number', 50)}
-    ${input('dots size', 'number', 3)}
-    ${input('dots color', 'color', '#000000')}
+    ${input('show dots', 'toggle')}
+    ${input('dots count', 'number')}
+    ${input('dots speed', 'number')}
+    ${input('dots size', 'number')}
+    ${input('dots color', 'color')}
   </div>
   <div class="box event-dots">
     <h3>event dots</h3>
-    ${input('move points', 'toggle', true)}
-    ${input('icons rounding (%)', 'number', 100)}
+    ${input('move points', 'toggle')}
+    ${input('icons rounding (%)', 'number')}
   </div>
   <div class="box start-and-end-screens">
     <h3>Start & end screens</h3>
-    ${input('start screen file', 'file', 'no god english.jpg')}
-    ${input('end screen file', 'file', 'credit.mp4')}
-    ${input('start screen duration', 'number', 4)}
-    ${input('end screen duration', 'number', 0)}
-    ${input('screen fade time', 'number', 1)}
+    ${input('start screen file', 'file')}
+    ${input('end screen file', 'file')}
+    ${input('start screen duration', 'number')}
+    ${input('end screen duration', 'number')}
+    ${input('screen fade time', 'number')}
   </div>
   <div class="box raffle">
     <h3>Raffle</h3>
-    ${input('min videos', 'number', 0)}
-    ${input('max videos', 'number', 0)}
-    ${input('min distance between videos', 'number', 0)}
-    ${input('raffle files', 'file', '')} # allow multiple
+    ${input('min videos', 'number')}
+    ${input('max videos', 'number')}
+    ${input('min distance between videos', 'number')}
+    ${input('raffle files', 'file')} # allow multiple
   </div>`
 
   module.template = `<div class="edit-config">
@@ -139,3 +167,13 @@ const Config = (module => {
 })({})
 
 window.Config = Config
+
+window.DEFAULT_CONFIG = {
+  'map aspect ratio': 1.5,
+  'map height (px)': 1701,
+  'image area height (%)': 55,
+  'image area position (%)': 35,
+  'text position (%)': 15,
+  'subtext position (%)': 15,
+  'text width (%)': 80
+}
