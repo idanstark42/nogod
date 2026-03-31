@@ -3,17 +3,44 @@ const Config = (module => {
   let config
 
   function getConfigFromUI () {
-    const config = {}
-    return config
-  }
-  
-  function setConfigToUI (config) {
-    config = Object.assign({}, config, DEFAULT_CONFIG)
+    const newConfig = {}
 
-    Object.keys(config).forEach(key => {
-      $(`input[name="${key}"]`).val(config[key])
+    $('input').each((i, el) => {
+      const name = el.name
+      const value = parseValue(el)
+      newConfig[name] = value
     })
 
+    return newConfig
+  }
+  
+  function setConfigToUI () {
+    Object.keys(config).forEach(key => {
+      if (typeof config[key] === 'boolean') {
+        $(`input[name="${key}"]`).prop('checked', config[key])
+      } else if (typeof config[key] === 'object' && key.includes('file')) {
+        // skip file inputs
+      } else {
+        $(`input[name="${key}"]`).val(config[key])
+      }
+    })
+  }
+
+  function connectEvents () {
+    $('input').on('change input', function (event) {
+      const name = event.target.name
+      const value = parseValue(event.target)
+
+      config = Object.assign({}, config, getConfigFromUI())
+      console.log('change config', name, value)
+      config[name] = value
+      setConfigToUI()
+      updateUI()
+      console.log('updated config', config)
+    })
+  }
+
+  function updateUI () {
     $('#layout-demo-main-container').css({
       height: `${config['image area height (%)'] || 50}%`,
       bottom: `${config['image area position (%)'] || 50}%`
@@ -24,12 +51,30 @@ const Config = (module => {
     })
 
     $('#layout-demo-text').css({
-      bottom: `${config['text position (%)'] || 30}%`
+      bottom: `${config['text position (%)'] || 30}%`,
+      left: `${(100 - (config['text width (%)'] || 80)) / 2}%`,
+      width: `${config['text width (%)'] || 80}%`
     })
 
     $('#layout-demo-subtext').css({
-      bottom: `${config['subtext position (%)'] || 20}%`
+      bottom: `${config['subtext position (%)'] || 20}%`,
+      left: `${(100 - (config['text width (%)'] || 80)) / 2}%`,
+      width: `${config['text width (%)'] || 80}%`
     })
+  }
+
+  function parseValue (input) {
+    let value = input.value
+    if (input.type === 'number' || input.type === 'range') {
+      value = parseFloat(value)
+    } else if (input.type === 'file') {
+      value = input.files
+    } else if (input.type === 'color') {
+      value = value.toUpperCase()
+    } else if (input.type === 'toggle') {
+      value = input.checked
+    }
+    return value
   }
 
   module.init = async () => {
@@ -41,7 +86,7 @@ const Config = (module => {
 
     $('.edit-config .title .version')[0].innerText = version
     $('.edit-config .title .save').click(async () => {
-      await Backend.saveConfig(version, getConfigFromUI())
+      await Backend.saveConfig(version, config)
       window.location.hash = ''
       window.location.reload(true)
     })
@@ -51,7 +96,12 @@ const Config = (module => {
     })
 
     $('.edit-config .fields')[0].innerHTML = FIELDS_HTML
-    setConfigToUI(config)
+    setTimeout(() => {
+      connectEvents()
+      config = Object.assign({}, window.DEFAULT_CONFIG, config)
+      setConfigToUI()
+      updateUI()
+    }, 100)
 
     Dots.init($(document.body), {
       'dots count': 200,
@@ -62,7 +112,16 @@ const Config = (module => {
   }
   
   function input(name, type) {
-    return `<div class="input">
+    if (type === 'number' && name.includes('%')) {
+      const label = name.replace('(%)', '(%)')
+      return `<div class="percent input">
+        <label>${label}</label>
+        <input type="range" name="${name}" min="0" max="100" step="1">
+        <input type="number" name="${name}" min="0" max="100" step="1">
+      </div>`
+    }
+    
+    return `<div class="${type} input">
       <label>${name}</label>
       <input type="${type}" name="${name}">
     </div>`
@@ -77,7 +136,6 @@ const Config = (module => {
   const FIELDS_HTML = `<div class="box page-layout">
     <h3>Page layout</h3>
     ${input('map aspect ratio', 'number')}
-    ${input('map height (px)', 'number')}
     ${input('image area height (%)', 'number')}
     ${input('image area position (%)', 'number')}
     ${input('text position (%)', 'number')}
@@ -170,7 +228,6 @@ window.Config = Config
 
 window.DEFAULT_CONFIG = {
   'map aspect ratio': 1.5,
-  'map height (px)': 1701,
   'image area height (%)': 55,
   'image area position (%)': 35,
   'text position (%)': 15,
