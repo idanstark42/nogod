@@ -3,7 +3,7 @@
   height: 100%;
 
   display: grid;
-  grid-template-columns: 20rem 1fr;
+  grid-template-columns: 1fr;
   grid-template-rows: 4rem 1fr;
   padding: 2rem;
   gap: 1rem;
@@ -34,7 +34,7 @@
 
 .edit-config .fields {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: repeat(4, calc(25% - 0.75rem));
   grid-template-rows: 1fr 1fr 1fr;
   padding: 1rem;
   gap: 1rem;
@@ -147,18 +147,18 @@
 }
 
 .edit-config .fields .box.color-and-audio {
-  grid-column: 2 / 3;
-  grid-row: 1 / 2;
+  grid-column: 1 / 2;
+  grid-row: 3 / 4;
 }
 
 .edit-config .fields .box.text-design {
   grid-column: 2 / 3;
-  grid-row: 2 / 3;
+  grid-row: 1 / 2;
 }
 
 .edit-config .fields .box.moving-points {
-  grid-column: 3 / 4;
-  grid-row: 1 / 2;
+  grid-column: 2 / 3;
+  grid-row: 2 / 3;
 }
 
 .edit-config .fields .box.event-dots {
@@ -167,8 +167,8 @@
 }
 
 .edit-config .fields .box.start-and-end-screens {
-  grid-column: 1 / 2;
-  grid-row: 3 / 4;
+  grid-column: 3 / 4;
+  grid-row: 1 / 2;
 }
 
 .edit-config .fields .box.raffle {
@@ -222,4 +222,17 @@
   text-align: justify;
 }
 
+#text-demo {
+  width: 100%;
+  background: #000000DD;
+  border: #FFFFFFDD solid 1px;
+  margin-top: 1rem;
+}
 
+#text-demo-text, #text-demo-subtext {
+  width: 100%;
+  overflow: hidden;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  text-overflow: clip;
+}

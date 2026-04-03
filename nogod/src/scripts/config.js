@@ -73,6 +73,22 @@ const Config = (module => {
       color: config['text color'],
       backgroundColor: config['text area background color']
     })
+
+    $('#text-demo-text').css({
+      color: config['text color'],
+      backgroundColor: config['text area background color'],
+      lineHeight: `${config['text line height (px)'] || 40}px`,
+      fontSize: `${config['text size (px)'] || 30}px`,
+      direction: config['direction left-to-right'] ? 'ltr' : 'rtl'
+    })
+
+    $('#text-demo-subtext').css({
+      color: config['text color'],
+      backgroundColor: config['text area background color'],
+      lineHeight: `${config['subtext line height (px)'] || 30}px`,
+      fontSize: `${config['subtext size (px)'] || 20}px`,
+      direction: config['direction left-to-right'] ? 'ltr' : 'rtl'
+    })
   }
 
   function parseValue (input) {
@@ -83,7 +99,7 @@ const Config = (module => {
       value = input.files
     } else if (input.type === 'color') {
       value = value.toUpperCase()
-    } else if (input.type === 'toggle') {
+    } else if (input.type === 'checkbox') {
       value = input.checked
     }
     return value
@@ -93,6 +109,8 @@ const Config = (module => {
     await Backend.init()
     const version = localStorage.getItem('version')
     config = await Backend.loadConfig(version)
+    config = Object.fromEntries(Object.entries(config).filter(([key, value]) => value !== null))
+    config = Object.assign({}, window.DEFAULT_CONFIG, config)
 
     $('.edit-config .title')[0].innerHTML = TITLE_HTML
 
@@ -110,9 +128,7 @@ const Config = (module => {
     $('.edit-config .fields')[0].innerHTML = FIELDS_HTML
     setTimeout(() => {
       connectEvents()
-      console.log(config['text color'])
       config = Object.assign({}, window.DEFAULT_CONFIG, config)
-      console.log(config['text color'])
       setConfigToUI()
       updateUI()
     }, 100)
@@ -207,6 +223,10 @@ const Config = (module => {
     ${input('subtext line height (px)', 'number')}
     ${input('text size (px)', 'number')}
     ${input('subtext size (px)', 'number')}
+    <div id="text-demo">
+      <div id="text-demo-text">text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text</div>
+      <div id="text-demo-subtext">subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext</div>
+    </div>
   </div>
   <div class="box moving-points">
     <h3>moving points</h3>
@@ -239,7 +259,6 @@ const Config = (module => {
 
   module.template = `<div class="edit-config">
     <div class="title segment"></div>
-    <div class="events segment"></div>
     <div class="fields segment"></div>
   </div>`
 
@@ -262,4 +281,46 @@ window.DEFAULT_CONFIG = {
   'main background color': '#000000',
   'deadzone background color': '#000000',
   'text color': '#FFFFFF',
+
+  'direction left-to-right': false,
+  'text line height (px)': 40,
+  'subtext line height (px)': 30,
+  'text size (px)': 30,
+  'subtext size (px)': 20,
+
+  'show dots': true,
+  'dots count': 200,
+  'dots speed': 20,
+  'dots size': 2,
+  'dots color': '#FFFFFF',
+
+  'move points': true,
+  'icons rounding (%)': 100,
+
+  'start screen duration': 5,
+  'end screen duration': 5,
+  'screen fade time': 1,
+
+  'min videos': 5,
+  'max videos': 20,
+  'min distance between videos': 10,
+
+  'animation fade duration (sec)': 1,
+  'animation move duration (sec)': 1,
+  'animation open duration (sec)': 1,
+
+  'animation delay (sec)': 0.5,
+  'text time (sec)': 5,
+  'image time (sec)': 5,
+  'subtext delay (sec)': 0.5,
+  'subtext duration (sec)': 5,
+  'subtext transition (sec)': 1,
+  'time between events (sec)': 0.5,
+  'time after start screen (sec)': 0.5,
+  'wait after points fade (sec)': 0.5,
+  'wait after point move (sec)': 0.5,
+  'wait after opening (sec)': 0.5,
+  'wait before closing (sec)': 0.5,
+  'wait after closing (sec)': 0.5,
+  'wait after point move back (sec)': 0.5
 }
