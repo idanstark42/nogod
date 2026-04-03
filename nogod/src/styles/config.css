@@ -53,6 +53,7 @@
   justify-content: space-between;
   padding: 0 0.5rem;
 }
+
 .edit-config .fields .box .input input {
   flex: 0;
   width: 0;
@@ -73,6 +74,53 @@
 .edit-config .fields .box .input input[type="range"] {
   width: 100%;
   padding: 6px 0;
+}
+
+.edit-config .fields .box .input input[type="color"] {
+  padding: 0;
+}
+
+.edit-config .fields .box .input input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+/* hide checkbox */
+.input.toggle input {
+  display: none;
+}
+
+/* track */
+.input.toggle .slider {
+  position: relative;
+  display: block;
+  width: 42px;
+  height: 22px;
+  background: #ccc;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+/* knob */
+.input.toggle .slider::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+/* checked */
+.input.toggle input:checked + .slider {
+  background: #666;
+}
+
+.input.toggle input:checked + .slider::after {
+  transform: translateX(20px);
 }
 
 .edit-config .fields .box .input label {
@@ -148,6 +196,7 @@
   margin: auto;
   height: 100%;
   overflow: hidden;
+  border: #FFFFFFDD solid 1px;
 }
 
 #layout-demo-text, #layout-demo-subtext {
@@ -155,7 +204,22 @@
   width: 100%;
 }
 
-#layout-demo-main, #layout-demo-text, #layout-demo-subtext {
-  background: #000000DD;
-  border: #FFFFFFDD solid 1px;
+#layout-demo-text {
+  font-size: 10px;
+  text-overflow: clip;
+  height: 10px;
+  overflow: hidden;
+  letter-spacing: 0.1em;
+  text-align: justify;
 }
+
+#layout-demo-subtext {
+  font-size: 6px;
+  text-overflow: clip;
+  height: 6px;
+  overflow: hidden;
+  letter-spacing: 0.1em;
+  text-align: justify;
+}
+
+

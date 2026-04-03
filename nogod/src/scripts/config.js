@@ -32,34 +32,46 @@ const Config = (module => {
       const value = parseValue(event.target)
 
       config = Object.assign({}, config, getConfigFromUI())
-      console.log('change config', name, value)
       config[name] = value
       setConfigToUI()
       updateUI()
-      console.log('updated config', config)
+    })
+
+    $('.toggle .slider').on('click', function (event) {
+      const input = $(this).siblings('input')[0]
+      $(input).click()
     })
   }
 
   function updateUI () {
+    $('#layout-demo').css({
+      backgroundColor: config['deadzone background color']
+    })
+
     $('#layout-demo-main-container').css({
       height: `${config['image area height (%)'] || 50}%`,
       bottom: `${config['image area position (%)'] || 50}%`
     })
 
     $('#layout-demo-main').css({
-      aspectRatio: String(config['map aspect ratio'])
+      aspectRatio: String(config['map aspect ratio']),
+      backgroundColor: config['main background color']
     })
 
     $('#layout-demo-text').css({
       bottom: `${config['text position (%)'] || 30}%`,
       left: `${(100 - (config['text width (%)'] || 80)) / 2}%`,
-      width: `${config['text width (%)'] || 80}%`
+      width: `${config['text width (%)'] || 80}%`,
+      color: config['text color'],
+      backgroundColor: config['text area background color']
     })
 
     $('#layout-demo-subtext').css({
       bottom: `${config['subtext position (%)'] || 20}%`,
       left: `${(100 - (config['text width (%)'] || 80)) / 2}%`,
-      width: `${config['text width (%)'] || 80}%`
+      width: `${config['text width (%)'] || 80}%`,
+      color: config['text color'],
+      backgroundColor: config['text area background color']
     })
   }
 
@@ -98,7 +110,9 @@ const Config = (module => {
     $('.edit-config .fields')[0].innerHTML = FIELDS_HTML
     setTimeout(() => {
       connectEvents()
+      console.log(config['text color'])
       config = Object.assign({}, window.DEFAULT_CONFIG, config)
+      console.log(config['text color'])
       setConfigToUI()
       updateUI()
     }, 100)
@@ -115,22 +129,31 @@ const Config = (module => {
     if (type === 'number' && name.includes('%')) {
       const label = name.replace('(%)', '(%)')
       return `<div class="percent input">
-        <label>${label}</label>
+        <label for="${name}">${label}</label>
         <input type="range" name="${name}" min="0" max="100" step="1">
         <input type="number" name="${name}" min="0" max="100" step="1">
+      </div>`
+    } else if (type === 'toggle') {
+      return `<div class="${type} input">
+        <label for="${name}">${name}</label>
+
+        <div class="toggle">
+          <input type="checkbox" id="${name}" name="${name}">
+          <span class="slider"></span>
+        </div>
       </div>`
     }
     
     return `<div class="${type} input">
-      <label>${name}</label>
-      <input type="${type}" name="${name}">
+      <label for="${name}">${name}</label>
+      <input type="${type}" id="${name}" name="${name}">
     </div>`
   }
 
   const TITLE_HTML = `<div class="version"></div>
   <div class="buttons">
-    <button class="cancel">save</button>
-    <button class="save">cancel</button>
+    <button class="save">save</button>
+    <button class="cancel">cancel</button>
   </div>`
 
   const FIELDS_HTML = `<div class="box page-layout">
@@ -145,8 +168,8 @@ const Config = (module => {
       <div id="layout-demo-main-container">
         <div id="layout-demo-main"></div>
       </div>
-      <div id="layout-demo-text"></div>
-      <div id="layout-demo-subtext"></div>
+      <div id="layout-demo-text">text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text text</div>
+      <div id="layout-demo-subtext">subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext subtext</div>
     </div>
   </div>
   <div class="box timeline">
@@ -172,10 +195,10 @@ const Config = (module => {
   <div class="box color-and-audio">
     <h3>colors & audio</h3>
     ${input('audio volume (%)', 'number')}
-    ${input('text area background color', 'color')}
-    ${input('main background color', 'color')}
     ${input('deadzone background color', 'color')}
+    ${input('main background color', 'color')}
     ${input('text color', 'color')}
+    ${input('text area background color', 'color')}
   </div>
   <div class="box text-design">
     <h3>text design</h3>
@@ -232,5 +255,11 @@ window.DEFAULT_CONFIG = {
   'image area position (%)': 35,
   'text position (%)': 15,
   'subtext position (%)': 15,
-  'text width (%)': 80
+  'text width (%)': 80,
+
+  'audio volume (%)': 100,
+  'text area background color': '#000000',
+  'main background color': '#000000',
+  'deadzone background color': '#000000',
+  'text color': '#FFFFFF',
 }
