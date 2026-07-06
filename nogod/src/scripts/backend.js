@@ -1,4 +1,4 @@
-import { mkdir, readDir, readTextFile, writeTextFile } from "@tauri-apps/plugin-fs"
+import { mkdir, readDir, readTextFile, writeTextFile, copyFile } from "@tauri-apps/plugin-fs"
 import { appDataDir, join } from "@tauri-apps/api/path"
 import { convertFileSrc } from "@tauri-apps/api/core"
 
@@ -44,6 +44,7 @@ const Backend = (module => {
 
   module.listConfigs = async () => {
     const dir = await join(await appDataDir(), CONFIG_DIR)
+    console.log(dir)
     const entries = await readDir(dir)
     const filtered = entries
       .filter(e => e.name.endsWith(".json"))
@@ -64,6 +65,7 @@ const Backend = (module => {
   }
 
   module.saveConfig = async (name, config) => {
+    console.log('saving config', name)
     const file = await join(await appDataDir(), CONFIG_DIR, `${name}.json`)
     await writeTextFile(file, JSON.stringify(config, null, 2))
     return true
@@ -84,6 +86,18 @@ const Backend = (module => {
     const folder = MEDIA_FOLDERS[filetype]
     const file = await join(await appDataDir(), folder, filename)
     return convertFileSrc(file)
+  }
+
+  module.saveFile = async (source) => {
+    console.log('saving file', source)
+    const filename = source.split('\\').pop()
+    const filetype = module.getFiletype(filename)
+    const folder = MEDIA_FOLDERS[filetype]
+    const destination = await join(await appDataDir(), folder, filename)
+    console.log('filename', filename)
+    console.log('destination', destination)
+    await copyFile(source, destination)
+    return destination
   }
 
   return module

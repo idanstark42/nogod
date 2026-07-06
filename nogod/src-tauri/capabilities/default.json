@@ -48,6 +48,8 @@
         }
       ],
       "deny": []
-    }
+    },
+    "fs:allow-copy-file",
+    "dialog:allow-open"
   ]
 }
