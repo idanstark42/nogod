@@ -50,3 +50,5 @@ window.Throttle = (func, delay) => {
     }
   }
 }
+
+window.NUMBER_REGEX = /\[(\d+(\.\d+)?)\]$/

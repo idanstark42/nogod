@@ -4,7 +4,8 @@ const Nogod = (module => {
 
   module.init = async () => {
     initVariables()
-    const { events, config } = await Backend.load(version)
+    const config = await Backend.loadConfig(version)
+    const events = config.events
     initCSS(config)
     initEvents(events, config)
     if (config['show dots']) {
@@ -39,7 +40,7 @@ const Nogod = (module => {
     $text = $('#text')
     $subtext = $('#subtext')
     $content = $('#content')
-    version = new URLSearchParams(window.location.search).get('version') || 1
+    version = localStorage.getItem('version', 1)
   }
 
   const initEvents = (events, config) => {
@@ -128,6 +129,17 @@ const Nogod = (module => {
 
     $content.css({ backgroundColor: config['deadzone background color'] })
   }
+
+  module.template = `<div id="loader">
+    <div id="loading">Loading...</div>
+  </div>
+  <div id="content">
+    <div id="main-container">
+      <div id="main"></div>
+    </div>
+    <div id="text"></div>
+    <div id="subtext"></div>
+  </div>`
 
   return module
 

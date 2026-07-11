@@ -347,3 +347,203 @@
   margin-left: calc(50% - 10rem);
   margin-top: 0.5rem;
 }
+
+@import url('https://fonts.googleapis.com/css2?family=Lato&family=Merriweather&family=Montserrat&family=Open+Sans&family=Oswald&family=PT+Sans&family=Raleway&family=Roboto&family=Slabo+27px&family=Source+Sans+Pro&display=swap');
+
+/* Redesigning the Event Container */
+.events .events-list .event {
+  background: #111;
+  border: 1px solid #666;
+  border-radius: 6px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+}
+
+.events .events-list .event .id {
+  font-weight: bold;
+  color: #888;
+}
+
+.event-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid #333;
+  padding-bottom: 0.5rem;
+}
+
+.event-header .input[id*="story"] {
+  flex: 1;
+  margin: 0;
+}
+
+.event-header .input[id*="story"] label, .dimensions-row label {
+  display: none;
+}
+
+.event-header .input[id*="story"] input {
+  width: 100%;
+}
+
+.event-header .toggles {
+  display: flex;
+  gap: 1.5rem;
+}
+
+
+
+.event-body {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+}
+
+.event-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Textareas should take up central space natively */
+.event-text textarea {
+  width: 100%;
+  background: #111;
+  color: #fff;
+  border: 1px solid #888;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+}
+
+.event-media {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-left: 1px solid #333;
+  padding-left: 1.5rem;
+}
+
+.fonts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.dimensions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dimensions-row .dimensions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dimensions-row .dimensions .input {
+  margin: 0;
+}
+
+.event-position {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  background: #1a1a1a;
+  padding: 1rem;
+  border-radius: 6px;
+}
+
+/* Select Box Styling for Fonts */
+.input select {
+  flex: 0;
+  width: 100%;
+  min-width: 4rem;
+  background: #111;
+  color: #fff;
+  border: 1px solid #888;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 14px;
+  outline: none;
+}
+
+/* Handling multiple file previews gracefully */
+.input.file .file-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-start;
+}
+
+.input.file .file-preview img {
+  max-width: 60px;
+  max-height: 60px;
+  border: 1px solid #444;
+  border-radius: 4px;
+}
+
+/* Timed Text Grid Layout */
+.timed-text-grid {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.timed-text-grid input {
+  border-radius: 0 !important;
+}
+
+.timed-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* Specific inputs inside the grid */
+.timed-row .time-input {
+  flex: 0 0 5rem !important; /* Forces the number input to stay small */
+  width: 5rem !important;
+}
+
+.timed-row .text-input {
+  flex: 1 !important; /* Forces the text input to take remaining space */
+  width: auto !important;
+}
+
+.timed-row .remove-timed-line {
+  background: transparent;
+  color: #cc0000;
+  border: 1px solid #cc0000;
+  border-radius: 0;
+  cursor: pointer;
+  padding: 0.25rem 0.6rem;
+  font-weight: bold;
+  height: 100%;
+  transition: all 0.2s;
+}
+
+.timed-row .remove-timed-line:hover {
+  background: #cc0000;
+  color: white;
+}
+
+.add-timed-line {
+  background: #333;
+  color: white;
+  border: 1px solid #666;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: background 0.2s;
+}
+
+.add-timed-line:hover {
+  background: #444;
+}
