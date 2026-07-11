@@ -217,6 +217,11 @@ const Config = (module => {
       window.location.hash = ''
       window.location.reload(true)
     })
+    $('.edit-config .title .delete').click(async () => {
+      await Backend.renameConfig(version, `deleted-${version}`)
+      window.location.hash = ''
+      window.location.reload(true)
+    })
 
     $('.edit-config .fields.content')[0].innerHTML = FIELDS_HTML
     $('.edit-config .events.content')[0].innerHTML = EVENTS_HTML
@@ -275,6 +280,7 @@ const Config = (module => {
   <div class="buttons">
     <button class="save">save</button>
     <button class="cancel">cancel</button>
+    <button class="delete">delete</button>
   </div>`
 
   const FIELDS_HTML = `<div class="box page-layout">

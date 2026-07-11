@@ -1,4 +1,4 @@
-import { mkdir, readDir, readTextFile, writeTextFile, copyFile } from "@tauri-apps/plugin-fs"
+import { mkdir, readDir, readTextFile, writeTextFile, copyFile, rename } from "@tauri-apps/plugin-fs"
 import { appDataDir, join } from "@tauri-apps/api/path"
 import { convertFileSrc } from "@tauri-apps/api/core"
 
@@ -68,6 +68,17 @@ const Backend = (module => {
     console.log('saving config', name)
     const file = await join(await appDataDir(), CONFIG_DIR, `${name}.json`)
     await writeTextFile(file, JSON.stringify(config, null, 2))
+    return true
+  }
+
+  module.renameConfig = async (oldName, newName) => {
+    console.log(`renaming config from ${oldName} to ${newName}`)
+
+    const baseDir = await appDataDir()
+    const oldFile = await join(baseDir, CONFIG_DIR, `${oldName}.json`)
+    const newFile = await join(baseDir, CONFIG_DIR, `${newName}.json`)
+
+    await rename(oldFile, newFile)
     return true
   }
 
