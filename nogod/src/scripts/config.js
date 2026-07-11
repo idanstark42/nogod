@@ -155,9 +155,30 @@ const Config = (module => {
     $('.events-list').html(config.events.map((event, index) => {
       const eventId = event.id || index + 1
       return `<div class="event" data-event-id="${eventId}">
-        <div class="event-header">
-          <div class="event-title">Event ${eventId}</div>
+        <div class="id">${eventId}</div>
+        <div class="event-head">
+          ${input('story', 'text', `event-${eventId}`)}
+          ${input('raffle', 'toggle', `event-${eventId}`)}
+          ${input('enabled', 'toggle', `event-${eventId}`)}
         </div>
+        ${input('image files', 'file', `event-${eventId}`)}
+        ${input('audio file', 'file', `event-${eventId}`)}
+        ${input('dot position x (%)', 'number', `event-${eventId}`)}
+        ${input('dot position y (%)', 'number', `event-${eventId}`)}
+        ${input('dot width (px)', 'number', `event-${eventId}`)}
+        ${input('dot height (px)', 'number', `event-${eventId}`)}
+        ${input('icon center x (%)', 'number', `event-${eventId}`)}
+        ${input('icon center y (%)', 'number', `event-${eventId}`)}
+        ${input('icon width (px)', 'number', `event-${eventId}`)}
+        ${input('icon height (px)', 'number', `event-${eventId}`)}
+        ${input('image width (px)', 'number', `event-${eventId}`)}
+        ${input('image height (px)', 'number', `event-${eventId}`)}
+        ${input('text (split by newline)', 'text', `event-${eventId}`)}
+        ${input('text delay (sec)', 'number', `event-${eventId}`)}
+        ${input('dot color', 'color', `event-${eventId}`)}
+        ${input('subtext', 'text', `event-${eventId}`)}
+        ${input('text font', 'text', `event-${eventId}`)  /* TODO font input */ }
+        ${input('subtext font', 'text', `event-${eventId}`)}
       </div>`
     }).join(''))
 
@@ -187,6 +208,8 @@ const Config = (module => {
       return `<img src="${fileSrc}" alt="preview">`
     } else if (filetype === 'video') {
       return `<video src="${fileSrc} alt="preview>`
+    } else if (filetype === 'audio') {
+      return `<audio src="${fileSrc} alt="preview">`
     }
   }
 
@@ -241,17 +264,20 @@ const Config = (module => {
     })
   }
   
-  function input(name, type) {
-    const id = name.toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9\-]/g, '')
+  function input(name, type, parent) {
+    parent = parent ? `${parent}-` : ''
+    const id = parent + name.toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9\-]/g, '')
+    const displayName = name
+    name = parent + name
     if (type === 'number' && name.includes('%')) {
       return `<div class="percent input" id="input-${id}">
-        <label for="${name}">${name}</label>
+        <label for="${name}">${displayName}</label>
         <input type="range" id="${id}-range" name="${name}" min="0" max="100" step="1">
         <input type="number" id="${id}-number" name="${name}" min="0" max="100" step="1">
       </div>`
     } else if (type === 'toggle') {
       return `<div class="${type} input" id="input-${id}">
-        <label for="${name}">${name}</label>
+        <label for="${name}">${displayName}</label>
 
         <div class="toggle">
           <input type="checkbox" id="${id}" name="${name}">
@@ -260,14 +286,14 @@ const Config = (module => {
       </div>`
     } else if (type === 'file') {
       return `<div class="${type} input" id="input-${id}" name="${name}">
-        <label>${name}</label>
+        <label>${displayName}</label>
         <div class="file-name">No file chosen</div>
         <div class="remove">remove</div>
       </div>`
     }
     
     return `<div class="${type} input" id="input-${id}">
-      <label for="${name}">${name}</label>
+      <label for="${name}">${displayName}</label>
       <input type="${type}" id="${id}" name="${name}">
     </div>`
   }
@@ -367,18 +393,47 @@ const Config = (module => {
     ${input('raffle files', 'file')} # allow multiple
   </div>`
 
-  const EVENTS_HTML = `<div class="box events">
-    <h3>Events</h3>
+  const EVENTS_HTML = `
     <div class="events-list"></div>
     <div class="no-events">No events yet. Click "Add event" to create one.</div>
-    <button class="add-event">Add event</button>
-  </div>`
+    <button class="add-event">Add event</button>`
 
   module.template = `<div class="edit-config">
     <div class="title segment"></div>
     <div class="events active content segment"></div>
     <div class="fields content segment"></div>
   </div>`
+
+  const DEFAULT_EVENT = {
+    'id': undefined,
+    'text story': '',
+    'text': '',
+    'image files': [],
+    'audio file': null,
+    'dot position x (%)': 50,
+    'dot position y (%)': 50,
+    'dot width (px)': 10,
+    'dot height (px)': 10,
+    'icon center x (cm)': 45,
+    'icon center y (cm)': 30,
+    'icon width (px)': 10,
+    'icon height (px)': 10,
+    'image width (px)': 1920,
+    'image height (px)': 1080,
+    'text delay (sec)': 0,
+    'icon center x (%)': 50,
+    'icon center y (%)': 50,
+    'dot location (x)': 45,
+    'dot location (%x of 90cm)': 50,
+    'dot location (y)': 30,
+    'dot location (%x of 60cm)': 50,
+    'dot color': '#FFFFFF',
+    'subtext': '',
+    'text font': 'Arial',
+    'subtext font': 'Arial',
+    'raffle': false,
+    'enabled': true
+  }
 
   return module
 
@@ -442,36 +497,4 @@ window.DEFAULT_CONFIG = {
   'wait before closing (sec)': 0.5,
   'wait after closing (sec)': 0.5,
   'wait after point move back (sec)': 0.5
-}
-
-// id text number	text story	image files	audio file	dot position x (%)	dot position y (%)	dot width (px)	dot height (px)	icon center x (cm)	icon center y (cm)	icon width (px)	icon height (px)	image width (px)	image height (px)	text (split by newline)	text delay (sec)	icon center x (%)	icon center y (%)	dot location (x)	dot location (%x of 90cm)	dot location (y) 	dot location (%x of 60cm)	dot color	subtext	text font	subtext font	raffle	enabled
-const DEFAULT_EVENT = {
-  'id': undefined,
-  'text story': '',
-  'text': '',
-  'image files': [],
-  'audio file': null,
-  'dot position x (%)': 50,
-  'dot position y (%)': 50,
-  'dot width (px)': 10,
-  'dot height (px)': 10,
-  'icon center x (cm)': 45,
-  'icon center y (cm)': 30,
-  'icon width (px)': 10,
-  'icon height (px)': 10,
-  'image width (px)': 1920,
-  'image height (px)': 1080,
-  'text delay (sec)': 0,
-  'icon center x (%)': 50,
-  'icon center y (%)': 50,
-  'dot location (x)': 45,
-  'dot location (%x of 90cm)': 50,
-  'dot location (y)': 30,
-  'dot location (%x of 60cm)': 50,
-  'dot color': '#FFFFFF',
-  'subtext': '',
-  'text font': 'Arial',
-  'subtext font': 'Arial',
-  'raffle': false,
-  'enabled': true
 }
