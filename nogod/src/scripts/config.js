@@ -41,7 +41,6 @@ const Config = (module => {
     })
 
     // Set Event Config
-    // Set Event Config
     config.events.forEach(event => {
       Object.keys(event).forEach(key => {
         const el = $(`[name="event-${event.id}-${key}"]`);
@@ -65,7 +64,6 @@ const Config = (module => {
       const eventId = event.id || index + 1
       const parent = `event-${eventId}`
       
-      // Grouping the inputs to make text central and better organize the layout
       return `<div class="event" data-event-id="${eventId}">
         <div class="event-header">
           <span class="id">#${eventId}</span>
@@ -75,39 +73,45 @@ const Config = (module => {
             ${input('enabled', 'toggle', parent)}
           </div>
         </div>
-        <div class="event-body">
-          <div class="event-text">
+        
+        <div class="event-body-columns">
+          <div class="text-column">
             ${input('text (split by newline)', 'timed-text', parent)}
-            ${input('subtext', 'text', parent)}
-            <div class="fonts-row">
-              ${input('text font', 'text', parent)}
-              ${input('subtext font', 'text', parent)}
-            </div>
-            ${input('text delay (sec)', 'number', parent)}
           </div>
-          <div class="event-media">
-            ${input('image files', 'file', parent)}
-            ${input('audio file', 'file', parent)}
-            <div class="dimensions-row">
-              <div>Image Size:</div>
-              <div class="dimensions">
+          
+          <div class="settings-column">
+            <div class="box">
+              ${input('subtext', 'text', parent)}
+              <div class="two-col">
+                ${input('text font', 'font', parent)}
+                ${input('subtext font', 'font', parent)}
+                ${input('text delay (sec)', 'number', parent)}
+              </div>
+            </div>
+            
+            <div class="box">
+              ${input('image files', 'file', parent)}
+              ${input('audio file', 'file', parent)}
+              <div class="two-col">
                 ${input('image width (px)', 'number', parent)}
-                <div>X</div>
                 ${input('image height (px)', 'number', parent)}
               </div>
             </div>
+            
+            <div class="box">
+              <div class="two-col">
+                ${input('dot position x (%)', 'number', parent)}
+                ${input('dot position y (%)', 'number', parent)}
+                ${input('dot width (px)', 'number', parent)}
+                ${input('dot height (px)', 'number', parent)}
+                ${input('icon center x (%)', 'number', parent)}
+                ${input('icon center y (%)', 'number', parent)}
+                ${input('icon width (px)', 'number', parent)}
+                ${input('icon height (px)', 'number', parent)}
+              </div>
+              ${input('dot color', 'color', parent)}
+            </div>
           </div>
-        </div>
-        <div class="event-position">
-          ${input('dot position x (%)', 'number', parent)}
-          ${input('dot position y (%)', 'number', parent)}
-          ${input('dot width (px)', 'number', parent)}
-          ${input('dot height (px)', 'number', parent)}
-          ${input('icon center x (%)', 'number', parent)}
-          ${input('icon center y (%)', 'number', parent)}
-          ${input('icon width (px)', 'number', parent)}
-          ${input('icon height (px)', 'number', parent)}
-          ${input('dot color', 'color', parent)}
         </div>
       </div>`
     }).join(''))
@@ -135,7 +139,8 @@ const Config = (module => {
     // Generic Input Listener (Delegated)
     $('.edit-config').on('change input', 'input, select, textarea', async function (event) {
       const name = event.target.name
-      if (!name) return; // Prevent errors from inputs without a name attribute      let value = parseValue(event.target)
+      if (!name) return; // Prevent errors from inputs without a name attribute
+      let value = parseValue(event.target)
 
       const eventRow = $(event.target).closest('.event')
       if (eventRow.length) {
@@ -254,9 +259,53 @@ const Config = (module => {
   }
 
   function updateUI () {
-    // [Keep your existing layout-demo and text-demo logic here...]
-    $('#layout-demo').css({ backgroundColor: config['deadzone background color'] })
-    // ... rest of your demo styling updates ...
+    // [Keep your existing layout-de
+    console.log(config)
+    $('#layout-demo').css({
+      backgroundColor: config['deadzone background color']
+    })
+
+    $('#layout-demo-main-container').css({
+      height: `${config['image area height (%)'] || 50}%`,
+      bottom: `${config['image area position (%)'] || 50}%`
+    })
+
+    $('#layout-demo-main').css({
+      aspectRatio: String(config['map aspect ratio']),
+      backgroundColor: config['main background color']
+    })
+
+    $('#layout-demo-text').css({
+      bottom: `${config['text position (%)'] || 30}%`,
+      left: `${(100 - (config['text width (%)'] || 80)) / 2}%`,
+      width: `${config['text width (%)'] || 80}%`,
+      color: config['text color'],
+      backgroundColor: config['text area background color']
+    })
+
+    $('#layout-demo-subtext').css({
+      bottom: `${config['subtext position (%)'] || 20}%`,
+      left: `${(100 - (config['text width (%)'] || 80)) / 2}%`,
+      width: `${config['text width (%)'] || 80}%`,
+      color: config['text color'],
+      backgroundColor: config['text area background color']
+    })
+
+    $('#text-demo-text').css({
+      color: config['text color'],
+      backgroundColor: config['text area background color'],
+      lineHeight: `${config['text line height (px)'] || 40}px`,
+      fontSize: `${config['text size (px)'] || 30}px`,
+      direction: config['direction left-to-right'] ? 'ltr' : 'rtl'
+    })
+
+    $('#text-demo-subtext').css({
+      color: config['text color'],
+      backgroundColor: config['text area background color'],
+      lineHeight: `${config['subtext line height (px)'] || 30}px`,
+      fontSize: `${config['subtext size (px)'] || 20}px`,
+      direction: config['direction left-to-right'] ? 'ltr' : 'rtl'
+    })
 
     $('#input-animation-move-duration-sec, #input-wait-after-point-move-sec, #input-wait-after-point-move-back-sec').css({
       display: config['move points'] ? 'flex' : 'none'
@@ -298,6 +347,9 @@ const Config = (module => {
         $(this).find('.file-name').text('No file chosen');
       }
     });
+
+    $('.input[id*="text"] > input, .input[id*="subtext"] > input').css({ direction: config['direction left-to-right'] ? 'ltr' : 'rtl' })
+    console.log(config)
   }
 
   function input(name, type, parent) {
@@ -562,37 +614,6 @@ const Config = (module => {
     <div class="fields content segment"></div>
   </div>`
 
-  const DEFAULT_EVENT = {
-    'id': undefined,
-    'text story': '',
-    'text': '',
-    'image files': [],
-    'audio file': null,
-    'dot position x (%)': 50,
-    'dot position y (%)': 50,
-    'dot width (px)': 10,
-    'dot height (px)': 10,
-    'icon center x (cm)': 45,
-    'icon center y (cm)': 30,
-    'icon width (px)': 10,
-    'icon height (px)': 10,
-    'image width (px)': 1920,
-    'image height (px)': 1080,
-    'text delay (sec)': 0,
-    'icon center x (%)': 50,
-    'icon center y (%)': 50,
-    'dot location (x)': 45,
-    'dot location (%x of 90cm)': 50,
-    'dot location (y)': 30,
-    'dot location (%x of 60cm)': 50,
-    'dot color': '#FFFFFF',
-    'subtext': '',
-    'text font': 'Arial',
-    'subtext font': 'Arial',
-    'raffle': false,
-    'enabled': true
-  }
-
   return module
 
 })({})
@@ -655,4 +676,35 @@ window.DEFAULT_CONFIG = {
   'wait before closing (sec)': 0.5,
   'wait after closing (sec)': 0.5,
   'wait after point move back (sec)': 0.5
+}
+
+window.DEFAULT_EVENT = {
+  'id': undefined,
+  'text story': '',
+  'text': '',
+  'image files': [],
+  'audio file': null,
+  'dot position x (%)': 50,
+  'dot position y (%)': 50,
+  'dot width (px)': 10,
+  'dot height (px)': 10,
+  'icon center x (cm)': 45,
+  'icon center y (cm)': 30,
+  'icon width (px)': 10,
+  'icon height (px)': 10,
+  'image width (px)': 1920,
+  'image height (px)': 1080,
+  'text delay (sec)': 0,
+  'icon center x (%)': 50,
+  'icon center y (%)': 50,
+  'dot location (x)': 45,
+  'dot location (%x of 90cm)': 50,
+  'dot location (y)': 30,
+  'dot location (%x of 60cm)': 50,
+  'dot color': '#FFFFFF',
+  'subtext': '',
+  'text font': 'Arial',
+  'subtext font': 'Arial',
+  'raffle': false,
+  'enabled': true
 }
