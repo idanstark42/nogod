@@ -1,5 +1,5 @@
 import { open } from "@tauri-apps/plugin-dialog"
-import { readTextFile } from "@tauri-apps/plugin-fs"
+import { readTextFile, readDir } from "@tauri-apps/plugin-fs"
 
 const Index = (module => {
   async function loadConfigs() {
@@ -16,11 +16,13 @@ const Index = (module => {
         <div class="name">${config}</div>
         <div class="run">run</div>
         <div class="edit">edit</div>
+        <div class="duplicate">duplicate</div>
       </div>`).join('')
     }
 
     $('.config .run').off('click').on('click', run)
     $('.config .edit').off('click').on('click', edit)
+    $('.config .duplicate').off('click').on('click', duplicateConfig)
   }
 
   async function createNew() {
@@ -28,6 +30,22 @@ const Index = (module => {
     if (!name) return
     await Backend.createConfig(name)
     await loadConfigs()
+  }
+
+  async function duplicateConfig(event) {
+    const sourceVersion = $(event.target).parent().attr('version')
+    const newName = prompt(`Enter name for the duplicated version (copy of ${sourceVersion}):`)
+    if (!newName) return
+
+    try {
+      const sourceConfig = await Backend.loadConfig(sourceVersion)
+      await Backend.createConfig(newName)
+      await Backend.saveConfig(newName, sourceConfig)
+      await loadConfigs()
+    } catch (err) {
+      console.error("Failed to duplicate configuration:", err)
+      alert("Error duplicating configuration. Check console for details.")
+    }
   }
 
   async function importFromCSV() {
@@ -48,7 +66,6 @@ const Index = (module => {
       const text = await readTextFile(configPath)
       const rows = CSV.parse(text)
       
-      // Assumes key is column 0, value is column 1
       rows.forEach(row => {
         if (row.length >= 2) {
           const key = row[0].trim()
@@ -82,14 +99,125 @@ const Index = (module => {
             }
           })
           
-          // Ensure events have an ID
           if (!eventObj.id) eventObj.id = i
           eventsData.push(eventObj)
         }
       }
     }
 
-    // 3. Merge and Save
+    // 3. Select folder and recursively scan all subfolders strictly mapping file names
+    const selectedFolder = await open({
+      directory: true,
+      multiple: false,
+      title: "Select folder containing your media files (Cancel to pick files manually)"
+    });
+
+    let folderFilesMap = new Map();
+    
+    async function scanDirectory(dirPath) {
+      try {
+        const entries = await readDir(dirPath);
+        for (const entry of entries) {
+          const entryName = entry.name;
+          const fullPath = `${dirPath}/${entryName}`;
+          
+          // Determine if it's a directory or file reliably
+          const isDir = entry.isDirectory || (!entry.isFile && !entryName.includes('.'));
+          
+          if (isDir) {
+            await scanDirectory(fullPath);
+          } else {
+            // Map strictly by file name (ignoring absolute path/subfolders)
+            folderFilesMap.set(entryName.toLowerCase(), fullPath);
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to scan directory: ${dirPath}`, err);
+      }
+    }
+
+    if (selectedFolder) {
+      await scanDirectory(selectedFolder);
+    }
+
+    // Cache to prevent asking for the same file name multiple times
+    const fileCache = new Map();
+
+    async function resolveFile(filename) {
+      const cleanName = filename.split(/[/\\]/).pop().trim();
+      if (!cleanName) return null;
+
+      if (fileCache.has(cleanName.toLowerCase())) {
+        return fileCache.get(cleanName.toLowerCase());
+      }
+
+      let sourcePath = null;
+
+      // Match strictly by file name across all subdirectories
+      if (folderFilesMap.has(cleanName.toLowerCase())) {
+        sourcePath = folderFilesMap.get(cleanName.toLowerCase());
+      } else {
+        const manualSelect = await open({
+          title: `File not found in folder tree. Select file for: ${cleanName}`,
+          multiple: false,
+          filters: [{ name: 'Media files', extensions: ['mp4', 'png', 'jpg', 'jpeg', 'tiff', 'mp3', 'ogg'] }]
+        });
+        if (manualSelect) {
+          sourcePath = Array.isArray(manualSelect) ? manualSelect[0] : manualSelect;
+        }
+      }
+
+      let savedPath = null;
+      if (sourcePath) {
+        savedPath = await Backend.saveFile(sourcePath);
+      }
+
+      fileCache.set(cleanName.toLowerCase(), savedPath);
+      return savedPath;
+    }
+
+    async function processFiles(value, isMultiple) {
+      if (!value) return isMultiple ? [] : null;
+      
+      let filenames = [];
+      if (Array.isArray(value)) {
+        filenames = value.map(v => String(v).trim()).filter(Boolean);
+      } else {
+        filenames = isMultiple 
+          ? String(value).split(/[\n,]+/).map(s => s.trim()).filter(Boolean)
+          : [String(value).trim()];
+      }
+
+      const savedPaths = [];
+      for (const filename of filenames) {
+        const saved = await resolveFile(filename);
+        if (saved) {
+          savedPaths.push(saved);
+        }
+      }
+
+      return isMultiple ? savedPaths : (savedPaths[0] || null);
+    }
+
+    // 4. Process File Uploads for Global Config
+    for (const [key, val] of Object.entries(configData)) {
+      if (key.includes('file') && val) {
+        const isMultiple = key.includes('files');
+        configData[key] = await processFiles(val, isMultiple);
+      }
+    }
+
+    // 5. Process File Uploads for Events Config
+    for (const event of eventsData) {
+      for (const [key, val] of Object.entries(event)) {
+        if (key.includes('file') && val) {
+          const isMultiple = key.includes('files');
+          event[key] = await processFiles(val, isMultiple);
+        }
+      }
+    }
+
+    // 6. Merge and Save
     const finalConfig = Object.assign({}, window.DEFAULT_CONFIG || {}, configData)
     finalConfig.events = eventsData
 

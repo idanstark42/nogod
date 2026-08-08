@@ -1,4 +1,3 @@
-
 const Nogod = (module => {
   let $mainContainer, $main, $text, $subtext, $content, version, player, startThrottle, stopThrottle
 
@@ -30,6 +29,12 @@ const Nogod = (module => {
       } else if (e.code === 'KeyS') {
         stopThrottle()
       }
+    })
+
+    // Back button functionality
+    $('#back-button').off('click').on('click', () => {
+      window.location.hash = ''
+      window.location.reload(true)
     })
   }
 
@@ -139,7 +144,8 @@ const Nogod = (module => {
     </div>
     <div id="text"></div>
     <div id="subtext"></div>
-  </div>`
+  </div>
+  <div id="back-button">back</div>`
 
   return module
 

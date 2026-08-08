@@ -42,7 +42,8 @@ body, html {
 }
 
 .config .run,
-.config .edit {
+.config .edit,
+.config .duplicate {
   padding: 4px 10px;
   border: 1px solid currentColor;
   border-radius: 6px;

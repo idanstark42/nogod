@@ -95,13 +95,18 @@ const Backend = (module => {
       filetype = module.getFiletype(filename)
 
     const folder = MEDIA_FOLDERS[filetype]
-    const file = await join(await appDataDir(), folder, filename)
+    
+    // Extract just the file name in case an absolute path was passed
+    // e.g., "C:\Users\...\images\0pen.jpg" -> "0pen.jpg"
+    // e.g., "0pen.jpg" -> "0pen.jpg"
+    const cleanFilename = filename.split(/[/\\]/).pop()
+
+    const file = await join(await appDataDir(), folder, cleanFilename)
     return convertFileSrc(file)
   }
 
   module.saveFile = async (source) => {
-    console.log('saving file', source)
-    const filename = source.split('\\').pop()
+    const filename = source.split(/[/\\]/).pop()
     const filetype = module.getFiletype(filename)
     const folder = MEDIA_FOLDERS[filetype]
     const destination = await join(await appDataDir(), folder, filename)

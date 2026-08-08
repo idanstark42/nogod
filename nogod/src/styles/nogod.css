@@ -50,3 +50,23 @@
   background-repeat: no-repeat;
   z-index: 10;
 }
+
+#back-button:not(:hover) {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+#back-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: sans-serif;
+  font-weight: bold;
+  border: 1px solid rgba(255,255,255,0.2);
+}

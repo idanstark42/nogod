@@ -4,6 +4,77 @@ import { convertFileSrc } from "@tauri-apps/api/core"
 const Config = (module => {
   let config
 
+  // --- Helper Functions to Get/Set Configuration ---
+  function getTargetValue(name, eventId) {
+    if (eventId) {
+      const eventConfig = config.events.find(e => e.id === eventId);
+      const rawName = name.replace(`event-${eventId}-`, '');
+      return eventConfig ? eventConfig[rawName] : null;
+    }
+    return config[name];
+  }
+
+  function setTargetValue(name, eventId, value) {
+    if (eventId) {
+      const eventConfig = config.events.find(e => e.id === eventId);
+      const rawName = name.replace(`event-${eventId}-`, '');
+      if (eventConfig) eventConfig[rawName] = value;
+    } else {
+      config[name] = value;
+    }
+  }
+
+  // --- Modal Logic ---
+  let currentModalContext = { name: null, eventId: null };
+
+  function openFileModal(name, eventId) {
+    currentModalContext = { name, eventId };
+    renderModalList();
+    $('#file-modal').css('display', 'flex');
+  }
+
+  function renderModalList() {
+    const { name, eventId } = currentModalContext;
+    let val = getTargetValue(name, eventId);
+    const files = Array.isArray(val) ? val : (val ? [val] : []);
+
+    let listHtml = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; box-sizing: border-box;">';
+    
+    files.forEach((f, idx) => {
+      const src = convertFileSrc(f);
+      const type = Backend.getFiletype(f);
+      const filename = f.split('\\').pop().split('/').pop();
+      
+      let preview = '';
+      if (type === 'image') {
+        preview = `<img src="${src}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 4px;">`;
+      } else if (type === 'video') {
+        preview = `<video src="${src}" controls style="width: 100%; height: 120px; object-fit: cover; border-radius: 4px;"></video>`;
+      } else if (type === 'audio') {
+        preview = `<div style="width: 100%; height: 120px; background: #333; display: flex; align-items: center; justify-content: center; border-radius: 4px;"><audio src="${src}" controls style="width: 90%; height: 40px;"></audio></div>`;
+      } else {
+        preview = `<div style="width: 100%; height: 120px; background: #444; border-radius: 4px; display:flex; align-items:center; justify-content:center; font-size: 12px; color: #fff;">${type}</div>`;
+      }
+
+      listHtml += `<div style="display: flex; flex-direction: column; background: #2a2a2a; padding: 10px; border-radius: 6px; box-sizing: border-box; gap: 8px;">
+          ${preview}
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+            <div style="flex: 1; word-break: break-all; color: white; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${filename}">${filename}</div>
+            <button class="remove-single-file" data-index="${idx}" style="background: #cc0000; color: white; border: none; padding: 4px 8px; cursor: pointer; border-radius: 4px; font-size: 11px; flex-shrink: 0;">Remove</button>
+          </div>
+      </div>`;
+    });
+    
+    listHtml += '</div>';
+
+    if (files.length === 0) {
+      listHtml = `<div style="color: #aaa; text-align: center; padding: 20px;">No files selected</div>`;
+    }
+
+    $('#file-modal .file-list').html(listHtml);
+  }
+
+
   function getConfigFromUI () {
     const newConfig = { events: [] }
 
@@ -50,7 +121,6 @@ const Config = (module => {
         } else if (!el.is('input[type="file"]') && !el.closest('.input.file').length) {
           el.val(event[key])
           
-          // NEW: Render the grid if this is a timed-text hidden input
           if (el.parent().hasClass('timed-text')) {
             renderTimedTextGrid(el, event[key]);
           }
@@ -139,22 +209,19 @@ const Config = (module => {
     // Generic Input Listener (Delegated)
     $('.edit-config').on('change input', 'input, select, textarea', async function (event) {
       const name = event.target.name
-      if (!name) return; // Prevent errors from inputs without a name attribute
+      if (!name) return;
       let value = parseValue(event.target)
 
       const eventRow = $(event.target).closest('.event')
       if (eventRow.length) {
-        // Event specific config update
         const eventId = eventRow.data('event-id')
         const eventConfig = config.events.find(e => e.id === eventId)
         const rawName = name.replace(`event-${eventId}-`, '')
         eventConfig[rawName] = value
       } else {
-        // Global config update
         config[name] = value
       }
       
-      // Only call updateUI to refresh previews/demos without losing text focus
       updateUI() 
     })
 
@@ -165,10 +232,19 @@ const Config = (module => {
 
     // Generic File Picker Listener (Delegated)
     $('.edit-config').on('click', '.input.file', async function (event) {
-      if ($(event.target).hasClass('remove')) return; // handled separately
+      if ($(event.target).closest('.remove').length) return;
       
       const name = $(this).attr('name')
       const multiple = name.includes('files')
+
+      const eventRow = $(this).closest('.event')
+      const eventId = eventRow.length ? eventRow.data('event-id') : null
+      const currentFiles = getTargetValue(name, eventId)
+
+      if (multiple && currentFiles && currentFiles.length > 0) {
+        openFileModal(name, eventId);
+        return;
+      }
 
       let result = await open({
         multiple,
@@ -184,15 +260,7 @@ const Config = (module => {
           savedPaths.push(await Backend.saveFile(file))
         }
         
-        const eventRow = $(this).closest('.event')
-        if (eventRow.length) {
-          const eventId = eventRow.data('event-id')
-          const eventConfig = config.events.find(e => e.id === eventId)
-          const rawName = name.replace(`event-${eventId}-`, '')
-          eventConfig[rawName] = multiple ? savedPaths : savedPaths[0]
-        } else {
-          config[name] = multiple ? savedPaths : savedPaths[0]
-        }
+        setTargetValue(name, eventId, multiple ? savedPaths : savedPaths[0]);
         updateUI()
       }
     })
@@ -200,20 +268,58 @@ const Config = (module => {
     // Generic File Remove Listener (Delegated)
     $('.edit-config').on('click', '.input.file .remove', function (event) {
       event.stopPropagation()
-      const name = $(this).parent().attr('name')
+      const name = $(this).closest('.input.file').attr('name')
       const multiple = name.includes('files')
 
       const eventRow = $(this).closest('.event')
-      if (eventRow.length) {
-        const eventId = eventRow.data('event-id')
-        const eventConfig = config.events.find(e => e.id === eventId)
-        const rawName = name.replace(`event-${eventId}-`, '')
-        eventConfig[rawName] = multiple ? [] : null
-      } else {
-        config[name] = multiple ? [] : null
-      }
+      const eventId = eventRow.length ? eventRow.data('event-id') : null
+      
+      setTargetValue(name, eventId, multiple ? [] : null)
       updateUI()
     })
+
+    // --- Modal Interactivity ---
+    $(document.body).on('click', '.remove-single-file', function() {
+      const idx = $(this).data('index');
+      const { name, eventId } = currentModalContext;
+      let val = getTargetValue(name, eventId);
+      
+      if (Array.isArray(val)) {
+        val.splice(idx, 1);
+        setTargetValue(name, eventId, val);
+        renderModalList();
+        updateUI(); 
+      }
+    });
+
+    $(document.body).on('click', '#file-modal .add-more-files', async function() {
+      let result = await open({
+        multiple: true,
+        filters: [{ name: 'Media files', extensions: ['mp4', 'png', 'jpg', 'jpeg', 'tiff', 'mp3', 'ogg'] }]
+      });
+
+      if (result) {
+        if (!Array.isArray(result)) {
+          result = [result];
+        }
+        const savedPaths = [];
+        for (const file of result) {
+          savedPaths.push(await Backend.saveFile(file));
+        }
+        
+        const { name, eventId } = currentModalContext;
+        let val = getTargetValue(name, eventId) || [];
+        val = val.concat(savedPaths);
+        
+        setTargetValue(name, eventId, val);
+        renderModalList();
+        updateUI();
+      }
+    });
+
+    $(document.body).on('click', '#file-modal .close-modal', function() {
+      $('#file-modal').hide();
+    });
 
     // --- Timed Text Grid Logic ---
     $('.edit-config').on('input', '.timed-row input', function() {
@@ -227,7 +333,6 @@ const Config = (module => {
         newLines.push(`${text} [${time}]`);
       });
       
-      // Build the string and trigger a change on the hidden input to save the config
       hiddenInput.val(newLines.join('\n')).trigger('change');
     });
 
@@ -240,7 +345,6 @@ const Config = (module => {
           <button class="remove-timed-line" title="Remove line">X</button>
         </div>`);
       
-      // Trigger an input event to save the newly added blank row
       grid.find('.time-input').last().trigger('input');
     });
 
@@ -252,14 +356,12 @@ const Config = (module => {
       if (grid.find('.timed-row').length === 0) {
         grid.siblings('input[type="hidden"]').val('').trigger('change');
       } else {
-        grid.find('.time-input').first().trigger('input'); // Trigger a save
+        grid.find('.time-input').first().trigger('input'); 
       }
     });
-    // --- End Timed Text Grid Logic ---
   }
 
   function updateUI () {
-    // [Keep your existing layout-de
     console.log(config)
     $('#layout-demo').css({
       backgroundColor: config['deadzone background color']
@@ -307,41 +409,105 @@ const Config = (module => {
       direction: config['direction left-to-right'] ? 'ltr' : 'rtl'
     })
 
+    // --- Dynamic Field Visibility Logic ---
+    const showIconsGlobal = !!config['move points'];
+    
     $('#input-animation-move-duration-sec, #input-wait-after-point-move-sec, #input-wait-after-point-move-back-sec').css({
-      display: config['move points'] ? 'flex' : 'none'
+      display: showIconsGlobal ? 'flex' : 'none'
+    });
+
+    ['start', 'end'].forEach(screen => {
+      // if the screen has a file and it's a video, hide the duration field
+      const screenFile = config[`${screen} screen file`];
+      const isVideo = screenFile && Backend.getFiletype(screenFile) === 'video';
+      $(`#input-${screen}-screen-duration`).css('display', isVideo ? 'none' : 'flex');
     })
+    
+    config.events.forEach(event => {
+      const eventId = event.id;
+      const isRaffle = !!event['raffle'];
+      
+      const getWrapper = (name) => {
+        const id = `event-${eventId}-${name}`.toLowerCase().replace(/ /g, '-').replace(/[^a-z0-9\-]/g, '');
+        return $(`#input-${id}`);
+      };
+
+      // Hide image fields if raffle is enabled
+      getWrapper('image files').css('display', isRaffle ? 'none' : '');
+      getWrapper('image width (px)').css('display', isRaffle ? 'none' : '');
+      getWrapper('image height (px)').css('display', isRaffle ? 'none' : '');
+
+      // Hide icon fields if "move points" is disabled globally
+      getWrapper('icon center x (%)').css('display', showIconsGlobal ? '' : 'none');
+      getWrapper('icon center y (%)').css('display', showIconsGlobal ? '' : 'none');
+      getWrapper('icon width (px)').css('display', showIconsGlobal ? '' : 'none');
+      getWrapper('icon height (px)').css('display', showIconsGlobal ? '' : 'none');
+    });
+    // --------------------------------------
 
     // Universal File Preview Renderer for Global and Event files
     $('.file-preview').remove()
     
     $('.input.file').each(function() {
       const name = $(this).attr('name');
-      let val;
+      const isMultiple = name.includes('files');
       
       const eventRow = $(this).closest('.event');
-      if (eventRow.length) {
-        const eventId = eventRow.data('event-id');
-        const eventObj = config.events.find(e => e.id === eventId);
-        const rawName = name.replace(`event-${eventId}-`, '');
-        val = eventObj ? eventObj[rawName] : null;
-      } else {
-        val = config[name];
-      }
+      const eventId = eventRow.length ? eventRow.data('event-id') : null;
+      const val = getTargetValue(name, eventId);
       
       if (val && val.length !== 0) {
         const files = Array.isArray(val) ? val : [val];
-        const fileText = files.length > 1 ? `${files.length} files` : files[0].split('\\').pop().split('/').pop();
-        $(this).find('.file-name').text(fileText);
         
-        const validPreviews = files.map(f => {
-          if(typeof f === 'string' && Backend.getFiletype(f) === 'image') {
-            return filePreview(f);
+        if (isMultiple) {
+          const previewCount = Math.min(files.length, 4);
+          let gridHtml = '<div class="file-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 8px;">';
+          
+          for (let i = 0; i < previewCount; i++) {
+            const isLast = (i === 3);
+            const hasMore = files.length > 4;
+            const src = convertFileSrc(files[i]);
+            const type = Backend.getFiletype(files[i]);
+            
+            let mediaHtml = '';
+            if (type === 'image') {
+              mediaHtml = `<img src="${src}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px;">`;
+            } else if (type === 'video') {
+              mediaHtml = `<video src="${src}" controls style="width: 100%; max-height: 100px; object-fit: contain; border-radius: 4px; background: #000;"></video>`;
+            } else if (type === 'audio') {
+              mediaHtml = `<div style="width: 100%; height: 100px; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#444; border-radius:4px;"><audio src="${src}" controls style="width: 90%; height: 40px;"></audio></div>`;
+            } else {
+              mediaHtml = `<div style="width: 100%; height: 100px; display:flex; align-items:center; justify-content:center; background:#444; border-radius:4px; font-size: 12px; color: #fff;">${type}</div>`;
+            }
+
+            if (isLast && hasMore) {
+              gridHtml += `<div style="position: relative;">
+                ${mediaHtml}
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5em; font-weight: bold; border-radius: 4px;">+${files.length - 3}</div>
+              </div>`;
+            } else {
+              gridHtml += `<div>${mediaHtml}</div>`;
+            }
           }
-          return '';
-        }).join('');
-        
-        if(validPreviews) {
-          $(this).append(`<div class="file-preview">${validPreviews}</div>`);
+          gridHtml += '</div>';
+
+          $(this).find('.file-name').html(`<span>${files.length} files selected</span>`);
+          $(this).append(`<div class="file-preview multiple-preview">${gridHtml}</div>`);
+        } else {
+          const fileText = files[0].split('\\').pop().split('/').pop();
+          $(this).find('.file-name').text(fileText);
+          
+          const validPreviews = files.map(f => {
+            const type = Backend.getFiletype(f);
+            if (type === 'image' || type === 'video' || type === 'audio') {
+              return filePreview(f);
+            }
+            return '';
+          }).join('');
+          
+          if (validPreviews) {
+            $(this).append(`<div class="file-preview">${validPreviews}</div>`);
+          }
         }
       } else {
         $(this).find('.file-name').text('No file chosen');
@@ -349,7 +515,6 @@ const Config = (module => {
     });
 
     $('.input[id*="text"] > input, .input[id*="subtext"] > input').css({ direction: config['direction left-to-right'] ? 'ltr' : 'rtl' })
-    console.log(config)
   }
 
   function input(name, type, parent) {
@@ -418,9 +583,9 @@ const Config = (module => {
     if (filetype === 'image') {
       return `<img src="${fileSrc}" alt="preview">`
     } else if (filetype === 'video') {
-      return `<video src="${fileSrc} alt="preview>`
+      return `<video src="${fileSrc}" controls alt="preview" style="max-width: 100%; height: auto; object-fit: contain; background: #000;">`
     } else if (filetype === 'audio') {
-      return `<audio src="${fileSrc} alt="preview">`
+      return `<audio src="${fileSrc}" controls alt="preview" style="width: 100%; margin-top: 8px;">`
     }
   }
 
@@ -431,12 +596,11 @@ const Config = (module => {
     for (let line of lines) {
       line = line.trim();
       if (!line) continue;
-      // Match text and timing, expecting: "text string [1.23]"
       const match = line.match(/^(.*?)\s*\[([\d.]+)\]\s*$/);
       if (match) {
         result.push({ text: match[1].trim(), time: match[2] });
       } else {
-        result.push({ text: line, time: 0 }); // Fallback if format is missing
+        result.push({ text: line, time: 0 }); 
       }
     }
     return result;
@@ -463,6 +627,11 @@ const Config = (module => {
     config = Object.fromEntries(Object.entries(config).filter(([key, value]) => value !== null))
     config = Object.assign({}, window.DEFAULT_CONFIG, config)
     console.log(config)
+
+    // Append Modal to Document Body
+    if (!$('#file-modal').length) {
+      $(document.body).append(MODAL_HTML);
+    }
 
     $('.edit-config .title')[0].innerHTML = TITLE_HTML
 
@@ -607,6 +776,17 @@ const Config = (module => {
     <div class="events-list"></div>
     <div class="no-events">No events yet. Click "Add event" to create one.</div>
     <button class="add-event">Add event</button>`
+
+  const MODAL_HTML = `<div id="file-modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center;">
+    <div class="modal-content" style="background:#222; padding:20px; border-radius:8px; width:80%; max-width:700px; max-height:80vh; display:flex; flex-direction:column; box-sizing: border-box;">
+      <h3 style="margin-top:0; color:white;">Manage Files</h3>
+      <div class="file-list" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; margin-bottom:15px; padding-right:10px; box-sizing: border-box;"></div>
+      <div style="display:flex; justify-content:space-between;">
+        <button class="add-more-files" style="padding:10px 15px; cursor:pointer;">Add Files</button>
+        <button class="close-modal" style="padding:10px 15px; cursor:pointer;">Close</button>
+      </div>
+    </div>
+  </div>`;
 
   module.template = `<div class="edit-config">
     <div class="title segment"></div>
