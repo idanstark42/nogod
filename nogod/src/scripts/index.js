@@ -48,6 +48,12 @@ const Index = (module => {
     }
   }
 
+  function applyBackwardCompatibility (config) {
+    if (config['screen fade time']) {
+      config['screen fade time (sec)'] = Number(config['screen fade time'])
+    }
+  }
+
   async function importFromCSV() {
     const name = prompt("Enter name for the new imported version:")
     if (!name) return
@@ -73,6 +79,7 @@ const Index = (module => {
           configData[key] = CSV.castValue(key, val, window.DEFAULT_CONFIG || {})
         }
       })
+      applyBackwardCompatibility(configData)
     }
 
     // 2. Load Events CSV

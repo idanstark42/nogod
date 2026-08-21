@@ -119,16 +119,16 @@ class Player {
   async _showImage (source, duration) {
     console.debug(`[player] showing image for ${duration} seconds`)
 
-    $(this.$main).append(`<div id="image-screen" style="background-image: url(${source}); opacity: 0; transition: opacity ${this.config['screen fade time']}s linear"></div>`)
+    $(this.$main).append(`<div id="image-screen" style="background-image: url(${source}); opacity: 0; transition: opacity ${this.config['screen fade time (sec)']}s linear"></div>`)
     await wait(this.config['animation fade duration (sec)'] * 1000)
     $('#main > :not(#image-screen)').css({ opacity: 0 })
     await wait(this.config['animation fade duration (sec)'] * 1000)
     $('#image-screen').css({ opacity: 1 })
-    await wait((this.config['screen fade time'] + duration) * 1000)
+    await wait((this.config['screen fade time (sec)'] + duration) * 1000)
     $('#image-screen').css({ opacity: 0 })
     await wait(this.config['animation fade duration (sec)'] * 1000)
     $('#main > :not(#image-screen)').css({ opacity: 1 })
-    await wait(this.config['screen fade time'] * 1000)
+    await wait(this.config['screen fade time (sec)'] * 1000)
     $('#image-screen').remove()
   }
 }
