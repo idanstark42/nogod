@@ -66,6 +66,22 @@ button:active {
   opacity: 0;
 }
 
+#fullscreen-button {
+  font-family: sans-serif;
+  position: fixed;
+  top: 0rem;
+  right: 3rem;
+  width: 3rem;
+  height: 3rem;
+  font-size: 3rem;
+  color: white;
+  cursor: pointer;
+}
+
+#fullscreen-button:not(:hover) {
+  opacity: 0;
+}
+
 /* Firefox */
 * {
   scrollbar-width: thin;

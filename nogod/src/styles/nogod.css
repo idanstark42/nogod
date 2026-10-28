@@ -34,7 +34,7 @@
   flex-direction: column;
   gap: 0.5em;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   text-align: center;
   box-sizing: border-box;
 }

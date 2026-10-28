@@ -4,13 +4,11 @@ const Nogod = (module => {
   module.init = async () => {
     initVariables()
     const config = await Backend.loadConfig(version)
-    const events = config.events
+    const events = config.events.filter(event => event.enabled)
     initCSS(config)
     initEvents(events, config)
-    if (config['show dots']) {
-      Dots.init($main, config)
-    }
-
+    Dots.init($main, config)
+    
     $('#loader').fadeOut(500, () => $('#content').fadeIn(500))
 
     startThrottle = Throttle(() => {
@@ -22,7 +20,6 @@ const Nogod = (module => {
     }, 1000)
 
     $('body').on('keypress', e => {
-      // if pressing space, play. If pressing 's', stop
       console.debug('[main] key pressed', e.code)
       if (e.code === 'Space') {
         startThrottle()
@@ -56,6 +53,7 @@ const Nogod = (module => {
     raffle.enrich(events)
     $main[0].innerHTML = events.map(event => event.html()).join('')
 
+    // Pass callback to initialize dots only when the first event starts
     player = new Player(raffle, config, $main, $text, $subtext)
     player.init($main)
 
@@ -68,6 +66,10 @@ const Nogod = (module => {
     }, () => {
       $text[0].innerHTML = ''
       $text.css({ direction: config['left-to-right'] ? 'ltr' : 'rtl' })
+
+      if (config['auto start']) {
+        startThrottle()
+      }
     })
 
     console.debug('[main] loading files')
@@ -101,7 +103,7 @@ const Nogod = (module => {
   const initCSS = config => {
     $mainContainer.css({
       height: `${config['image area height (%)'] || 50}%`,
-      bottom: `${config['image area position (%)'] || 50}%`
+      top: `${config['image area position (%)'] || 50}%`
     })
 
     $main.css({
@@ -111,7 +113,7 @@ const Nogod = (module => {
     })
 
     $text.css({
-      bottom: `${config['text position (%)'] || 30}%`,
+      top: `${config['text position (%)'] || 30}%`,
       color: config['text color'] || 'black',
       fontSize: `${config['text size (px)'] || 20}px`,
       lineHeight: `${config['text line height (px)'] || 30}px`,
@@ -121,7 +123,7 @@ const Nogod = (module => {
     })
 
     $subtext.css({
-      bottom: `${config['subtext position (%)'] || 20}%`,
+      top: `${config['subtext position (%)'] || 20}%`,
       color: config['text color'] || 'black',
       fontSize: `${config['subtext size (px)'] || 15}px`,
       lineHeight: `${config['subtext line height (px)'] || 30}px`,

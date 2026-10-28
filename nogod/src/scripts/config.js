@@ -339,19 +339,64 @@ const Config = (module => {
     $('.edit-config').on('click', '.add-timed-line', function(e) {
       e.preventDefault();
       const grid = $(this).siblings('.timed-text-grid');
-      grid.append(`<div class="timed-row">
-          <input type="number" class="time-input" step="0.01" value="0" placeholder="Sec">
-          <input type="text" class="text-input" value="" placeholder="Line text" dir="auto">
-          <button class="remove-timed-line" title="Remove line">X</button>
+      grid.append(`<div class="timed-row" style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+          <input type="number" class="time-input" step="0.01" value="0" placeholder="Sec" style="width: 70px;">
+          <input type="text" class="text-input" value="" placeholder="Line text" dir="auto" style="flex: 1;">
+          <button class="insert-timed-line" title="Insert line below" style="background: #444; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px;">+</button>
+          <button class="move-timed-up" title="Move up" style="background: #444; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px;">▲</button>
+          <button class="move-timed-down" title="Move down" style="background: #444; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px;">▼</button>
+          <button class="remove-timed-line" title="Remove line" style="background: #cc0000; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px;">X</button>
         </div>`);
       
       grid.find('.time-input').last().trigger('input');
     });
 
+    // Insert line below a specific row
+    $('.edit-config').on('click', '.insert-timed-line', function(e) {
+      e.preventDefault();
+      const currentRow = $(this).closest('.timed-row');
+      const grid = currentRow.closest('.timed-text-grid');
+      
+      const newRowHtml = `<div class="timed-row" style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+          <input type="number" class="time-input" step="0.01" value="0" placeholder="Sec" style="width: 70px;">
+          <input type="text" class="text-input" value="" placeholder="Line text" dir="auto" style="flex: 1;">
+          <button class="insert-timed-line" title="Insert line below" style="background: #444; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px;">+</button>
+          <button class="move-timed-up" title="Move up" style="background: #444; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px;">▲</button>
+          <button class="move-timed-down" title="Move down" style="background: #444; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px;">▼</button>
+          <button class="remove-timed-line" title="Remove line" style="background: #cc0000; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px;">X</button>
+        `;
+      
+      currentRow.after(newRowHtml);
+      grid.find('.time-input').first().trigger('input');
+    });
+
+    // Move row up
+    $('.edit-config').on('click', '.move-timed-up', function(e) {
+      e.preventDefault();
+      const currentRow = $(this).closest('.timed-row');
+      const prevRow = currentRow.prev('.timed-row');
+      if (prevRow.length) {
+        currentRow.insertBefore(prevRow);
+        const grid = currentRow.closest('.timed-text-grid');
+        grid.find('.time-input').first().trigger('input');
+      }
+    });
+
+    // Move row down
+    $('.edit-config').on('click', '.move-timed-down', function(e) {
+      e.preventDefault();
+      const currentRow = $(this).closest('.timed-row');
+      const nextRow = currentRow.next('.timed-row');
+      if (nextRow.length) {
+        currentRow.insertAfter(nextRow);
+        const grid = currentRow.closest('.timed-text-grid');
+        grid.find('.time-input').first().trigger('input');
+      }
+    });
+
     $('.edit-config').on('click', '.remove-timed-line', function(e) {
       e.preventDefault();
-      const grid = $(this).closest('.timed-text-grid');
-      $(this).closest('.timed-row').remove();
+      const grid = $(this).closest('.timed-text-grid');$(this).closest('.timed-row').remove();
       
       if (grid.find('.timed-row').length === 0) {
         grid.siblings('input[type="hidden"]').val('').trigger('change');
@@ -369,7 +414,7 @@ const Config = (module => {
 
     $('#layout-demo-main-container').css({
       height: `${config['image area height (%)'] || 50}%`,
-      bottom: `${config['image area position (%)'] || 50}%`
+      top: `${config['image area position (%)'] || 50}%`
     })
 
     $('#layout-demo-main').css({
@@ -378,7 +423,7 @@ const Config = (module => {
     })
 
     $('#layout-demo-text').css({
-      bottom: `${config['text position (%)'] || 30}%`,
+      top: `${config['text position (%)'] || 30}%`,
       left: `${(100 - (config['text width (%)'] || 80)) / 2}%`,
       width: `${config['text width (%)'] || 80}%`,
       color: config['text color'],
@@ -386,7 +431,7 @@ const Config = (module => {
     })
 
     $('#layout-demo-subtext').css({
-      bottom: `${config['subtext position (%)'] || 20}%`,
+      top: `${config['subtext position (%)'] || 20}%`,
       left: `${(100 - (config['text width (%)'] || 80)) / 2}%`,
       width: `${config['text width (%)'] || 80}%`,
       color: config['text color'],
@@ -447,7 +492,6 @@ const Config = (module => {
 
     // Universal File Preview Renderer for Global and Event files
     $('.file-preview').remove()
-    
     $('.input.file').each(function() {
       const name = $(this).attr('name');
       const isMultiple = name.includes('files');
@@ -553,7 +597,7 @@ const Config = (module => {
         <label for="${name}" style="font-weight: bold; color: #aaa;">${displayName}</label>
         <input type="hidden" id="${id}" name="${name}">
         <div class="timed-text-grid" style="width: 100%;"></div>
-        <button class="add-timed-line">+ Add Line</button>
+        <button class="add-timed-line" style="padding: 4px 10px; cursor: pointer;">+ Add Line</button>
       </div>`
     }
     
@@ -611,10 +655,13 @@ const Config = (module => {
     const lines = parseTimedText(rawText || '');
     let html = '';
     lines.forEach((line) => {
-      html += `<div class="timed-row">
-        <input type="number" class="time-input" step="0.01" value="${line.time}" placeholder="Sec">
-        <input type="text" class="text-input" value="${line.text.replace(/"/g, '&quot;')}" placeholder="Line text" dir="auto">
-        <button class="remove-timed-line" title="Remove line">X</button>
+      html += `<div class="timed-row" style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
+        <input type="number" class="time-input" step="0.01" value="${line.time}" placeholder="Sec" style="width: 70px;">
+        <input type="text" class="text-input" value="${line.text.replace(/"/g, '&quot;')}" placeholder="Line text" dir="auto" style="flex: 1;">
+        <button class="insert-timed-line" title="Insert line below" style="background: #444; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px;">+</button>
+        <button class="move-timed-up" title="Move up" style="background: #444; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px;">▲</button>
+        <button class="move-timed-down" title="Move down" style="background: #444; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px;">▼</button>
+        <button class="remove-timed-line" title="Remove line" style="background: #cc0000; color: white; border: none; padding: 2px 6px; cursor: pointer; border-radius: 3px;">X</button>
       </div>`;
     });
     container.html(html);
@@ -660,7 +707,7 @@ const Config = (module => {
 
     $('.edit-config .fields.content')[0].innerHTML = FIELDS_HTML
     $('.edit-config .events.content')[0].innerHTML = EVENTS_HTML
-    
+
     setTimeout(() => {
       connectEvents()
       config = Object.assign({}, window.DEFAULT_CONFIG, config)
@@ -706,6 +753,7 @@ const Config = (module => {
   </div>
   <div class="box timeline">
     <h3>timeline</h3>
+    ${input('auto start', 'toggle')}
     ${input('move points', 'toggle')}
     ${input('time after start screen (sec)', 'number')}
     ${input('animation fade duration (sec)', 'number')}
@@ -769,7 +817,7 @@ const Config = (module => {
     ${input('min videos', 'number')}
     ${input('max videos', 'number')}
     ${input('min distance between videos', 'number')}
-    ${input('raffle files', 'file')} # allow multiple
+    ${input('raffle files', 'file')}
   </div>`
 
   const EVENTS_HTML = `
@@ -802,6 +850,7 @@ window.Config = Config
 
 window.DEFAULT_CONFIG = {
   'events': [],
+  'auto start': false,
   'map aspect ratio': 1.5,
   'image area height (%)': 55,
   'image area position (%)': 35,
